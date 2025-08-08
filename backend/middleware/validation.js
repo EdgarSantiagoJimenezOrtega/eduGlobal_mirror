@@ -14,11 +14,17 @@ const validate = (schema, property = 'body') => {
     });
 
     if (error) {
+      console.log('❌ Validation failed for:', req.method, req.path);
+      console.log('📝 Raw data received:', JSON.stringify(req[property], null, 2));
+      console.log('🔍 Validation errors:', error.details);
+      
       const errorDetails = error.details.map(detail => ({
         field: detail.path.join('.'),
         message: detail.message,
         value: detail.context?.value
       }));
+
+      console.log('📋 Processed error details:', errorDetails);
 
       return res.status(400).json({
         error: 'Validation Error',

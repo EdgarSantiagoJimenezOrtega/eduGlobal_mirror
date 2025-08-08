@@ -114,6 +114,18 @@ router.post('/',
   validateBody(courseSchema.create), 
   async (req, res) => {
     try {
+      console.log('🆕 POST /api/courses - Creating new course');
+      console.log('📝 Received data:', JSON.stringify(req.body, null, 2));
+      console.log('📋 Data types:', {
+        title: typeof req.body.title,
+        slug: typeof req.body.slug,
+        description: typeof req.body.description,
+        category_id: typeof req.body.category_id,
+        order: typeof req.body.order,
+        cover_images: typeof req.body.cover_images,
+        is_locked: typeof req.body.is_locked
+      });
+      
       const courseData = req.body;
 
       // Check if slug already exists
