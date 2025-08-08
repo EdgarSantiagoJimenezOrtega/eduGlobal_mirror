@@ -1,0 +1,126 @@
+const Joi = require('joi');
+
+// Course validation schemas
+const courseSchema = {
+  create: Joi.object({
+    title: Joi.string().required().min(1).max(255).trim(),
+    slug: Joi.string().required().min(1).max(255).trim().pattern(/^[a-z0-9-]+$/),
+    description: Joi.string().allow('').max(2000).trim(),
+    category_id: Joi.number().integer().positive().allow(null),
+    order: Joi.number().integer().min(0).default(0),
+    cover_images: Joi.array().items(Joi.string().uri()).default([]),
+    is_locked: Joi.boolean().default(false)
+  }),
+  
+  update: Joi.object({
+    title: Joi.string().min(1).max(255).trim(),
+    slug: Joi.string().min(1).max(255).trim().pattern(/^[a-z0-9-]+$/),
+    description: Joi.string().allow('').max(2000).trim(),
+    category_id: Joi.number().integer().positive().allow(null),
+    order: Joi.number().integer().min(0),
+    cover_images: Joi.array().items(Joi.string().uri()),
+    is_locked: Joi.boolean()
+  }).min(1)
+};
+
+// Module validation schemas
+const moduleSchema = {
+  create: Joi.object({
+    course_id: Joi.number().integer().positive().required(),
+    title: Joi.string().required().min(1).max(255).trim(),
+    description: Joi.string().allow('').max(2000).trim(),
+    order: Joi.number().integer().min(0).default(0),
+    is_locked: Joi.boolean().default(false)
+  }),
+  
+  update: Joi.object({
+    course_id: Joi.number().integer().positive(),
+    title: Joi.string().min(1).max(255).trim(),
+    description: Joi.string().allow('').max(2000).trim(),
+    order: Joi.number().integer().min(0),
+    is_locked: Joi.boolean()
+  }).min(1)
+};
+
+// Lesson validation schemas
+const lessonSchema = {
+  create: Joi.object({
+    module_id: Joi.number().integer().positive().required(),
+    title: Joi.string().required().min(1).max(255).trim(),
+    video_url: Joi.string().uri().allow('').trim(),
+    support_content: Joi.string().allow('').trim(), // HTML content
+    order: Joi.number().integer().min(0).default(0),
+    drip_delay_minutes: Joi.number().integer().min(0).default(0)
+  }),
+  
+  update: Joi.object({
+    module_id: Joi.number().integer().positive(),
+    title: Joi.string().min(1).max(255).trim(),
+    video_url: Joi.string().uri().allow('').trim(),
+    support_content: Joi.string().allow('').trim(),
+    order: Joi.number().integer().min(0),
+    drip_delay_minutes: Joi.number().integer().min(0)
+  }).min(1)
+};
+
+// User progress validation schemas
+const userProgressSchema = {
+  create: Joi.object({
+    user_id: Joi.string().uuid().required(), // Assuming Supabase auth UUIDs
+    lesson_id: Joi.number().integer().positive().required(),
+    is_completed: Joi.boolean().default(false),
+    completed_at: Joi.date().iso().allow(null)
+  }),
+  
+  update: Joi.object({
+    user_id: Joi.string().uuid(),
+    lesson_id: Joi.number().integer().positive(),
+    is_completed: Joi.boolean(),
+    completed_at: Joi.date().iso().allow(null)
+  }).min(1)
+};
+
+// Favorites validation schemas
+const favoriteSchema = {
+  create: Joi.object({
+    user_id: Joi.string().uuid().required(),
+    item_type: Joi.string().valid('course', 'module', 'lesson').required(),
+    item_id: Joi.number().integer().positive().required()
+  }),
+  
+  update: Joi.object({
+    user_id: Joi.string().uuid(),
+    item_type: Joi.string().valid('course', 'module', 'lesson'),
+    item_id: Joi.number().integer().positive()
+  }).min(1)
+};
+
+// Common parameter validations
+const paramValidation = {
+  id: Joi.number().integer().positive().required(),
+  uuid: Joi.string().uuid().required()
+};
+
+// Query parameter validations
+const queryValidation = {
+  limit: Joi.number().integer().min(1).max(100).default(50),
+  offset: Joi.number().integer().min(0).default(0),
+  order_by: Joi.string().valid('id', 'title', 'order').default('order'),
+  order_direction: Joi.string().valid('asc', 'desc').default('asc'),
+  course_id: Joi.number().integer().positive(),
+  module_id: Joi.number().integer().positive(),
+  user_id: Joi.string().uuid(),
+  item_type: Joi.string().valid('course', 'module', 'lesson'),
+  is_completed: Joi.boolean(),
+  is_locked: Joi.boolean()
+};
+
+module.exports = {
+  courseSchema,
+  moduleSchema,
+  lessonSchema,
+  userProgressSchema,
+  favoriteSchema,
+  paramValidation,
+  queryValidation
+};

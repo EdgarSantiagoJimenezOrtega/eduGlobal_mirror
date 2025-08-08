@@ -4,6 +4,16 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
+// Import database connection
+const { testConnection, testSimpleQuery } = require('./config/database');
+
+// Import route modules
+const coursesRoutes = require('./routes/courses');
+const modulesRoutes = require('./routes/modules');
+const lessonsRoutes = require('./routes/lessons');
+const userProgressRoutes = require('./routes/user_progress');
+const favoritesRoutes = require('./routes/favorites');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -28,36 +38,25 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+  const dbStatus = await testConnection();
+  
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     service: 'eduweb-backend',
-    version: '1.0.0'
+    version: '2.0.0',
+    database: dbStatus ? 'Connected' : 'Disconnected',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
 // API Routes
-// Issue #1: Basic courses endpoint with demo data
-app.get('/api/courses', (req, res) => {
-  try {
-    // Demo response as specified in requirements
-    const demoResponse = [
-      {
-        "id": 1,
-        "title": "Demo"
-      }
-    ];
-    
-    res.status(200).json(demoResponse);
-  } catch (error) {
-    console.error('Error fetching courses:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Unable to fetch courses'
-    });
-  }
-});
+app.use('/api/courses', coursesRoutes);
+app.use('/api/modules', modulesRoutes);
+app.use('/api/lessons', lessonsRoutes);
+app.use('/api/user_progress', userProgressRoutes);
+app.use('/api/favorites', favoritesRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -66,7 +65,11 @@ app.use('*', (req, res) => {
     message: `Route ${req.originalUrl} not found`,
     availableRoutes: [
       'GET /health',
-      'GET /api/courses'
+      'GET /api/courses',
+      'GET /api/modules', 
+      'GET /api/lessons',
+      'GET /api/user_progress',
+      'GET /api/favorites'
     ]
   });
 });
@@ -82,11 +85,30 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 EDU WEB Backend running on port ${PORT}`);
   console.log(`📋 Health check: http://localhost:${PORT}/health`);
-  console.log(`📚 Courses endpoint: http://localhost:${PORT}/api/courses`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('');
+  console.log('📚 Available API Endpoints:');
+  console.log(`   GET/POST/PUT/DELETE /api/courses`);
+  console.log(`   GET/POST/PUT/DELETE /api/modules`);
+  console.log(`   GET/POST/PUT/DELETE /api/lessons`);
+  console.log(`   GET/POST/PUT/DELETE /api/user_progress`);
+  console.log(`   GET/POST/PUT/DELETE /api/favorites`);
+  console.log('');
+  
+  // Test database connection on startup
+  console.log('🔌 Testing database connection...');
+  const dbConnected = await testConnection();
+  
+  if (dbConnected) {
+    // If connection test passed, try a simple query
+    await testSimpleQuery();
+  } else {
+    console.log('⚠️  Database connection failed. Check your .env configuration.');
+    console.log('   Required: SUPABASE_URL, SUPABASE_ANON_KEY');
+  }
 });
 
 module.exports = app;

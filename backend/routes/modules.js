@@ -1,0 +1,388 @@
+const express = require('express');
+const router = express.Router();
+const { supabase } = require('../config/database');
+const { moduleSchema, paramValidation, queryValidation } = require('../validators/schemas');
+const { validateBody, validateParams, validateQuery } = require('../middleware/validation');
+const Joi = require('joi');
+
+// GET /api/modules - List all modules with optional filtering
+router.get('/', 
+  validateQuery(Joi.object(queryValidation)), 
+  async (req, res) => {
+    try {
+      const { limit, offset, order_by, order_direction, course_id, is_locked } = req.query;
+      
+      let query = supabase
+        .from('modules')
+        .select(`
+          id,
+          course_id,
+          title,
+          description,
+          order,
+          is_locked,
+          courses (
+            id,
+            title,
+            slug
+          )
+        `)
+        .order(order_by, { ascending: order_direction === 'asc' })
+        .range(offset, offset + limit - 1);
+
+      // Apply filters
+      if (course_id) {
+        query = query.eq('course_id', course_id);
+      }
+      
+      if (typeof is_locked === 'boolean') {
+        query = query.eq('is_locked', is_locked);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to fetch modules'
+        });
+      }
+
+      res.status(200).json({
+        data,
+        pagination: {
+          total: count,
+          limit,
+          offset,
+          has_more: count > offset + limit
+        }
+      });
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
+// GET /api/modules/:id - Get single module
+router.get('/:id', 
+  validateParams(Joi.object({ id: paramValidation.id })), 
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const { data, error } = await supabase
+        .from('modules')
+        .select(`
+          id,
+          course_id,
+          title,
+          description,
+          order,
+          is_locked,
+          courses (
+            id,
+            title,
+            slug
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({
+            error: 'Not Found',
+            message: `Module with id ${id} not found`
+          });
+        }
+        
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to fetch module'
+        });
+      }
+
+      res.status(200).json(data);
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
+// POST /api/modules - Create new module
+router.post('/', 
+  validateBody(moduleSchema.create), 
+  async (req, res) => {
+    try {
+      const moduleData = req.body;
+
+      // Verify that the course exists
+      const { data: course, error: courseError } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('id', moduleData.course_id)
+        .single();
+
+      if (courseError) {
+        if (courseError.code === 'PGRST116') {
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: 'Referenced course does not exist',
+            field: 'course_id'
+          });
+        }
+        
+        console.error('Database error:', courseError);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to verify course existence'
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('modules')
+        .insert(moduleData)
+        .select(`
+          id,
+          course_id,
+          title,
+          description,
+          order,
+          is_locked,
+          courses (
+            id,
+            title,
+            slug
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to create module'
+        });
+      }
+
+      res.status(201).json(data);
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
+// PUT /api/modules/:id - Update module
+router.put('/:id', 
+  validateParams(Joi.object({ id: paramValidation.id })),
+  validateBody(moduleSchema.update), 
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      // If updating course_id, verify the new course exists
+      if (updateData.course_id) {
+        const { data: course, error: courseError } = await supabase
+          .from('courses')
+          .select('id')
+          .eq('id', updateData.course_id)
+          .single();
+
+        if (courseError) {
+          if (courseError.code === 'PGRST116') {
+            return res.status(400).json({
+              error: 'Bad Request',
+              message: 'Referenced course does not exist',
+              field: 'course_id'
+            });
+          }
+          
+          console.error('Database error:', courseError);
+          return res.status(500).json({
+            error: 'Database Error',
+            message: 'Failed to verify course existence'
+          });
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('modules')
+        .update({
+          ...updateData
+        })
+        .eq('id', id)
+        .select(`
+          id,
+          course_id,
+          title,
+          description,
+          order,
+          is_locked,
+          courses (
+            id,
+            title,
+            slug
+          )
+        `)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({
+            error: 'Not Found',
+            message: `Module with id ${id} not found`
+          });
+        }
+        
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to update module'
+        });
+      }
+
+      res.status(200).json(data);
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
+// DELETE /api/modules/:id - Delete module
+router.delete('/:id', 
+  validateParams(Joi.object({ id: paramValidation.id })), 
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Check if module has associated lessons
+      const { data: lessons } = await supabase
+        .from('lessons')
+        .select('id')
+        .eq('module_id', id)
+        .limit(1);
+
+      if (lessons && lessons.length > 0) {
+        return res.status(409).json({
+          error: 'Conflict',
+          message: 'Cannot delete module with associated lessons. Delete lessons first.'
+        });
+      }
+
+      const { error } = await supabase
+        .from('modules')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to delete module'
+        });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
+// GET /api/modules/:id/lessons - Get all lessons for a module
+router.get('/:id/lessons', 
+  validateParams(Joi.object({ id: paramValidation.id })),
+  validateQuery(Joi.object(queryValidation)), 
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { limit, offset, order_by, order_direction } = req.query;
+
+      // First check if module exists
+      const { data: module, error: moduleError } = await supabase
+        .from('modules')
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (moduleError) {
+        if (moduleError.code === 'PGRST116') {
+          return res.status(404).json({
+            error: 'Not Found',
+            message: `Module with id ${id} not found`
+          });
+        }
+        
+        console.error('Database error:', moduleError);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to verify module existence'
+        });
+      }
+
+      const { data, error, count } = await supabase
+        .from('lessons')
+        .select(`
+          id,
+          module_id,
+          title,
+          video_url,
+          support_content,
+          order,
+          drip_delay_minutes,
+        `)
+        .eq('module_id', id)
+        .order(order_by === 'title' ? 'title' : 'order', { ascending: order_direction === 'asc' })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to fetch lessons'
+        });
+      }
+
+      res.status(200).json({
+        data,
+        pagination: {
+          total: count,
+          limit,
+          offset,
+          has_more: count > offset + limit
+        }
+      });
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
+module.exports = router;
