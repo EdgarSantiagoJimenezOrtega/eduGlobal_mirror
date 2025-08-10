@@ -1633,3 +1633,77 @@ El README.md ahora refleja profesionalmente todo el trabajo realizado:
 
 ---
 
+## 👤 User
+
+ERROR en GitHub Actions CI:
+
+"Dependencies lock file is not found in /home/runner/work/eduweb-db/eduweb-db. Supported file patterns: package-lock.json,npm-shrinkwrap.json,yarn.lock"
+
+PROBLEMA IDENTIFICADO:
+- GitHub Actions busca package-lock.json en la raíz del proyecto
+- Pero tenemos package.json separados en backend/ y frontend/
+- Necesita configurar cache correctamente para subcarpetas
+
+NECESITO que corrijas el workflow .github/workflows/ci.yml:
+
+1. **Eliminar o corregir cache configuration:**
+   - Remover cache setup-node si está configurado para raíz
+   - O configurar cache paths correctos: backend/package-lock.json y frontend/package-lock.json
+
+2. **Alternativa simple:**
+   - Remover completamente cache configuration
+   - Solo hacer npm install sin cache por ahora
+
+3. **Workflow debe funcionar:**
+   - Install dependencies en backend/ y frontend/
+   - Run tests en ambas carpetas
+   - Echo "deploy" al final
+
+El error es de configuración de cache, no de código. Corrige el workflow para que funcione sin errores.
+
+---
+
+## 🤖 Claude
+
+Exacto! El problema es que el cache de setup-node busca package-lock.json en la raíz, pero tenemos proyectos separados en subcarpetas. Voy a corregir el workflow removiendo el cache automático y configurándolo manualmente:
+
+---
+
+## 🤖 Claude
+
+¡Perfecto! He corregido el workflow CI para solucionar el error de cache. Los cambios realizados:
+
+## ✅ Workflow CI corregido:
+
+### 🔧 **Problema solucionado:**
+- **Removido**: `cache: 'npm'` del setup-node que buscaba package-lock.json en raíz
+- **Agregado**: Cache manual específico para cada subcarpeta (backend/ y frontend/)
+
+### 📋 **Configuración actualizada:**
+
+1. **Cache separado por proyecto:**
+   - `backend/node_modules` con key basado en `backend/package-lock.json`
+   - `frontend/node_modules` con key basado en `frontend/package-lock.json`
+
+2. **Instalación correcta:**
+   - `npm ci` en cada subcarpeta
+   - Cache independiente para mejor performance
+
+3. **Flujo completo funcional:**
+   - ✅ Install backend dependencies
+   - ✅ Install frontend dependencies  
+   - ✅ Run backend tests
+   - ✅ Run frontend tests
+   - ✅ Build frontend
+   - ✅ Echo "deploy" (simulación)
+
+### 🚀 **Beneficios del fix:**
+- **Cache optimizado** para proyectos multi-carpeta
+- **Builds más rápidos** con cache de node_modules
+- **Matrix testing** en Node.js 18.x y 20.x
+- **Error eliminado** - ya no buscará package-lock.json en raíz
+
+Ahora el workflow debería ejecutarse sin errores y completar todo el pipeline CI correctamente. El cache funcionará apropiadamente para ambas subcarpetas del proyecto.
+
+---
+
