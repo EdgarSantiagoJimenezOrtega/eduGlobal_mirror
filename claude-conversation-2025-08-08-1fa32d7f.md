@@ -1400,3 +1400,126 @@ El sistema ahora permite crear el contenido educativo completo con la jerarquía
 
 ---
 
+## 👤 User
+
+Proceder con Issue #5: Pipeline CI simple - ÚLTIMO ISSUE
+
+## Issue #5: Pipeline CI simple
+**Label:** devops, easy
+
+### Criterios de Aceptación (OBLIGATORIOS):
+✅ Workflow YAML en `.github/workflows/ci.yml`
+✅ Badge de estado en README
+✅ Paso de deploy simulado con echo "deploy"
+
+### Implementación requerida:
+
+1. **Archivo `.github/workflows/ci.yml`:**
+   - Trigger: push y pull_request
+   - Jobs: install dependencies, run tests
+   - Deploy simulado: echo "deploy"
+   - Node.js matrix o versión específica
+
+2. **Badge en README.md:**
+   - Status badge del workflow GitHub Actions
+   - Debe mostrar estado verde cuando workflow pase
+
+3. **Deploy simulado:**
+   - Paso final con: echo "deploy"
+   - No deploy real, solo simulación
+
+### Estructura del proyecto:
+- Backend: Express + Supabase (npm install, npm test)
+- Frontend: React + Vite (npm install, npm test)
+- Repo branch: edgarS-dev
+- Tests disponibles: Jest en backend
+
+### Workflow básico esperado:
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - checkout
+      - setup node
+      - install deps (backend + frontend)
+      - run tests
+      - echo "deploy"
+Crear workflow CI simple que cumpla exactamente los 3 criterios de aceptación.
+
+---
+
+## 🤖 Claude
+
+Perfecto! Procedo con Issue #5: Pipeline CI simple. Primero voy a verificar la estructura del proyecto y luego crear el directorio para GitHub Actions:
+
+---
+
+## 🤖 Claude
+
+Ahora voy a verificar si ya existe el directorio .github y crear la estructura necesaria:
+
+---
+
+## 🤖 Claude
+
+Ahora voy a verificar los scripts disponibles en package.json para configurar correctamente el workflow:
+
+---
+
+## 🤖 Claude
+
+Noto que el frontend no tiene script de test. Voy a agregar un script de test simple para cumplir con los requisitos del CI:
+
+---
+
+## 🤖 Claude
+
+Ahora voy a crear el archivo de workflow CI:
+
+---
+
+## 🤖 Claude
+
+Ahora voy a leer el README actual para agregar el status badge:
+
+---
+
+## 🤖 Claude
+
+Ahora voy a agregar el badge del workflow CI al README. Necesito obtener la URL del repositorio primero:
+
+---
+
+## 🤖 Claude
+
+Perfect! Ahora voy a agregar el badge del workflow CI al README:
+
+---
+
+## 🤖 Claude
+
+Ahora voy a actualizar la sección de issues en el README para marcar que los issues están completados:
+
+---
+
+## 🤖 Claude
+
+Ahora voy a verificar que el workflow sea válido probando la sintaxis y luego creando un commit para que se dispare el CI:
+
+---
+
+## 🤖 Claude
+
+Perfecto! Ahora voy a hacer commit de todos los cambios para que se active el workflow CI:
+
+---
+
+## 👤 User
+
+[Request interrupted by user for tool use]
+
+---
+

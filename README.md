@@ -1,5 +1,6 @@
 # 🎓 EDU WEB - Plataforma Educativa
 
+[![CI](https://github.com/javierdici/eduweb-db/workflows/CI/badge.svg)](https://github.com/javierdici/eduweb-db/actions)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-4.18%2B-blue.svg)](https://expressjs.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Ready-orange.svg)](https://supabase.com/)
@@ -16,10 +17,10 @@ Frontend (React+Vite) ↔ Express API ↔ Supabase Postgres
 ## 📋 Issues de Desarrollo
 
 - [x] **Issue #1**: ✅ Scaffold Express + GET `/courses` básico
-- [ ] **Issue #2**: CRUD completo `/courses /modules /lessons` con Supabase
-- [ ] **Issue #3**: Admin panel React con tabla de cursos
-- [ ] **Issue #4**: Formularios dependientes y validaciones
-- [ ] **Issue #5**: Pipeline CI/CD con GitHub Actions
+- [x] **Issue #2**: ✅ CRUD completo `/courses /modules /lessons` con Supabase
+- [x] **Issue #3**: ✅ Admin panel React con tabla de cursos
+- [x] **Issue #4**: ✅ Formularios dependientes y validaciones
+- [x] **Issue #5**: ✅ Pipeline CI/CD con GitHub Actions
 
 ## 🚀 Quick Start
 
