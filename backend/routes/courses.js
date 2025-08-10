@@ -230,25 +230,89 @@ router.put('/:id',
 
 // DELETE /api/courses/:id - Delete course
 router.delete('/:id', 
-  validateParams(Joi.object({ id: paramValidation.id })), 
+  validateParams(Joi.object({ id: paramValidation.id })),
+  validateQuery(Joi.object({
+    cascade: Joi.boolean().default(false)
+  })),
   async (req, res) => {
     try {
       const { id } = req.params;
+      const { cascade } = req.query;
+
+      console.log(`🗑️ Deleting course ${id}, cascade: ${cascade}`);
 
       // Check if course has associated modules
       const { data: modules } = await supabase
         .from('modules')
         .select('id')
-        .eq('course_id', id)
-        .limit(1);
+        .eq('course_id', id);
 
-      if (modules && modules.length > 0) {
+      if (modules && modules.length > 0 && !cascade) {
+        console.log(`❌ Course has ${modules.length} modules, cascade delete not enabled`);
         return res.status(409).json({
           error: 'Conflict',
-          message: 'Cannot delete course with associated modules. Delete modules first.'
+          message: 'Cannot delete course with associated modules. Delete modules first or enable cascade delete.',
+          moduleCount: modules.length
         });
       }
 
+      if (cascade && modules && modules.length > 0) {
+        console.log(`🔄 Cascade deleting ${modules.length} modules and their lessons`);
+        
+        // Delete lessons for each module
+        for (const module of modules) {
+          // Delete user progress for lessons in this module
+          const { data: lessons } = await supabase
+            .from('lessons')
+            .select('id')
+            .eq('module_id', module.id);
+
+          if (lessons && lessons.length > 0) {
+            // Delete user progress for these lessons
+            await supabase
+              .from('user_progress')
+              .delete()
+              .in('lesson_id', lessons.map(l => l.id));
+
+            // Delete favorites for these lessons
+            await supabase
+              .from('favorites')
+              .delete()
+              .eq('item_type', 'lesson')
+              .in('item_id', lessons.map(l => l.id));
+          }
+
+          // Delete lessons
+          await supabase
+            .from('lessons')
+            .delete()
+            .eq('module_id', module.id);
+
+          // Delete favorites for this module
+          await supabase
+            .from('favorites')
+            .delete()
+            .eq('item_type', 'module')
+            .eq('item_id', module.id);
+        }
+
+        // Delete modules
+        await supabase
+          .from('modules')
+          .delete()
+          .eq('course_id', id);
+
+        // Delete favorites for this course
+        await supabase
+          .from('favorites')
+          .delete()
+          .eq('item_type', 'course')
+          .eq('item_id', id);
+
+        console.log(`✅ Cascade delete completed for course ${id}`);
+      }
+
+      // Delete the course
       const { error } = await supabase
         .from('courses')
         .delete()
@@ -262,6 +326,7 @@ router.delete('/:id',
         });
       }
 
+      console.log(`✅ Course ${id} deleted successfully`);
       res.status(204).send();
     } catch (error) {
       console.error('Server error:', error);

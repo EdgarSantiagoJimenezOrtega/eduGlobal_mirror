@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiClient } from '../lib/api'
+import DeleteCourseModal from './DeleteCourseModal'
 
 const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [courses, setCourses] = useState([])
@@ -8,6 +9,8 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [courseToDelete, setCourseToDelete] = useState(null)
   const itemsPerPage = 10
 
   const fetchCourses = async () => {
@@ -37,18 +40,18 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
     fetchCourses()
   }, [currentPage, refreshTrigger])
 
-  const handleDelete = async (courseId) => {
-    if (!confirm('Are you sure you want to delete this course?')) {
-      return
-    }
+  const handleDelete = (course) => {
+    setCourseToDelete(course)
+    setDeleteModalOpen(true)
+  }
 
-    try {
-      await apiClient.deleteCourse(courseId)
-      fetchCourses() // Refresh the table
-    } catch (err) {
-      console.error('Error deleting course:', err)
-      alert('Failed to delete course. Please try again.')
-    }
+  const handleDeleteSuccess = () => {
+    fetchCourses() // Refresh the table
+  }
+
+  const handleDeleteModalClose = () => {
+    setDeleteModalOpen(false)
+    setCourseToDelete(null)
   }
 
   const filteredCourses = courses.filter(course =>
@@ -166,7 +169,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                         </button>
                         <span className="text-gray-300">|</span>
                         <button
-                          onClick={() => handleDelete(course.id)}
+                          onClick={() => handleDelete(course)}
                           className="text-red-600 hover:text-red-900 text-sm font-medium"
                         >
                           Delete
@@ -254,6 +257,14 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
           </div>
         </div>
       )}
+
+      {/* Delete Modal */}
+      <DeleteCourseModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteModalClose}
+        course={courseToDelete}
+        onSuccess={handleDeleteSuccess}
+      />
     </div>
   )
 }

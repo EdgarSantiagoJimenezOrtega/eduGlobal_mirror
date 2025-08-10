@@ -2,10 +2,22 @@ import { useState } from 'react'
 import Layout from '../components/Layout'
 import CoursesTable from '../components/CoursesTable'
 import CourseModal from '../components/CourseModal'
+import ModuleModal from '../components/ModuleModal'
+import LessonModal from '../components/LessonModal'
 
 const Dashboard = () => {
+  // Course modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
+  
+  // Module modal states
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false)
+  const [selectedModule, setSelectedModule] = useState(null)
+  
+  // Lesson modal states
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false)
+  const [selectedLesson, setSelectedLesson] = useState(null)
+  
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const handleAddCourse = () => {
@@ -27,6 +39,38 @@ const Dashboard = () => {
     setRefreshTrigger(prev => prev + 1)
   }
 
+  // Module handlers
+  const handleAddModule = () => {
+    setSelectedModule(null)
+    setIsModuleModalOpen(true)
+  }
+
+  const handleEditModule = (module) => {
+    setSelectedModule(module)
+    setIsModuleModalOpen(true)
+  }
+
+  const handleModuleModalClose = () => {
+    setIsModuleModalOpen(false)
+    setSelectedModule(null)
+  }
+
+  // Lesson handlers
+  const handleAddLesson = () => {
+    setSelectedLesson(null)
+    setIsLessonModalOpen(true)
+  }
+
+  const handleEditLesson = (lesson) => {
+    setSelectedLesson(lesson)
+    setIsLessonModalOpen(true)
+  }
+
+  const handleLessonModalClose = () => {
+    setIsLessonModalOpen(false)
+    setSelectedLesson(null)
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -34,18 +78,40 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Manage your educational courses</p>
+            <p className="text-gray-600">Manage your educational content</p>
           </div>
           
-          <button
-            onClick={handleAddCourse}
-            className="btn-primary"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Add Course
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={handleAddCourse}
+              className="btn-primary"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add Course
+            </button>
+            
+            <button
+              onClick={handleAddModule}
+              className="btn-secondary"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              Add Module
+            </button>
+            
+            <button
+              onClick={handleAddLesson}
+              className="btn-outline"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Add Lesson
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -103,11 +169,25 @@ const Dashboard = () => {
           refreshTrigger={refreshTrigger}
         />
 
-        {/* Course Modal */}
+        {/* Modals */}
         <CourseModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           course={selectedCourse}
+          onSuccess={handleSuccess}
+        />
+        
+        <ModuleModal
+          isOpen={isModuleModalOpen}
+          onClose={handleModuleModalClose}
+          module={selectedModule}
+          onSuccess={handleSuccess}
+        />
+        
+        <LessonModal
+          isOpen={isLessonModalOpen}
+          onClose={handleLessonModalClose}
+          lesson={selectedLesson}
           onSuccess={handleSuccess}
         />
       </div>
