@@ -269,25 +269,65 @@ router.put('/:id',
 
 // DELETE /api/modules/:id - Delete module
 router.delete('/:id', 
-  validateParams(Joi.object({ id: paramValidation.id })), 
+  validateParams(Joi.object({ id: paramValidation.id })),
+  validateQuery(Joi.object({
+    cascade: Joi.boolean().default(false)
+  })),
   async (req, res) => {
     try {
       const { id } = req.params;
+      const { cascade } = req.query;
+
+      console.log(`🗑️ Deleting module ${id}, cascade: ${cascade}`);
 
       // Check if module has associated lessons
       const { data: lessons } = await supabase
         .from('lessons')
         .select('id')
-        .eq('module_id', id)
-        .limit(1);
+        .eq('module_id', id);
 
-      if (lessons && lessons.length > 0) {
+      if (lessons && lessons.length > 0 && !cascade) {
+        console.log(`❌ Module has ${lessons.length} lessons, cascade delete not enabled`);
         return res.status(409).json({
           error: 'Conflict',
-          message: 'Cannot delete module with associated lessons. Delete lessons first.'
+          message: 'Cannot delete module with associated lessons. Delete lessons first or enable cascade delete.',
+          lessonCount: lessons.length
         });
       }
 
+      if (cascade && lessons && lessons.length > 0) {
+        console.log(`🔄 Cascade deleting ${lessons.length} lessons`);
+        
+        // Delete user progress for these lessons
+        await supabase
+          .from('user_progress')
+          .delete()
+          .in('lesson_id', lessons.map(l => l.id));
+
+        // Delete favorites for these lessons
+        await supabase
+          .from('favorites')
+          .delete()
+          .eq('item_type', 'lesson')
+          .in('item_id', lessons.map(l => l.id));
+
+        // Delete lessons
+        await supabase
+          .from('lessons')
+          .delete()
+          .eq('module_id', id);
+
+        console.log(`✅ Cascade delete completed for module ${id}`);
+      }
+
+      // Delete favorites for this module
+      await supabase
+        .from('favorites')
+        .delete()
+        .eq('item_type', 'module')
+        .eq('item_id', id);
+
+      // Delete the module
       const { error } = await supabase
         .from('modules')
         .delete()
@@ -301,6 +341,7 @@ router.delete('/:id',
         });
       }
 
+      console.log(`✅ Module ${id} deleted successfully`);
       res.status(204).send();
     } catch (error) {
       console.error('Server error:', error);

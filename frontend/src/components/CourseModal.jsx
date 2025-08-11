@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiClient } from '../lib/api'
+import ImageUpload from './ImageUpload'
+import useStorage from '../hooks/useStorage'
 
 const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +16,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [coverImageUrl, setCoverImageUrl] = useState('')
+  const [imageUploadError, setImageUploadError] = useState('')
+  const storage = useStorage()
 
   const isEditing = !!course
 
@@ -63,9 +67,9 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
     }))
   }
 
-  const handleCoverImageChange = (e) => {
-    const url = e.target.value
+  const handleImageChange = (url, error) => {
     setCoverImageUrl(url)
+    setImageUploadError(error)
     setFormData(prev => ({
       ...prev,
       cover_images: url ? [url] : []
@@ -85,6 +89,9 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
       }
       if (!formData.slug.trim()) {
         throw new Error('Slug is required')
+      }
+      if (imageUploadError) {
+        throw new Error('Please fix image upload error: ' + imageUploadError)
       }
 
       const dataToSubmit = {
@@ -212,29 +219,32 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="cover_image" className="block text-sm font-medium text-gray-700 mb-1">
-                Cover Image URL
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Course Cover Image
               </label>
-              <input
-                type="url"
-                id="cover_image"
-                className="input-field"
-                placeholder="https://example.com/image.jpg"
-                value={coverImageUrl}
-                onChange={handleCoverImageChange}
-              />
-              {coverImageUrl && (
-                <div className="mt-2">
-                  <img
-                    src={coverImageUrl}
-                    alt="Cover preview"
-                    className="h-20 w-32 object-cover rounded-lg border"
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
+              {storage.isLoading && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm mb-2">
+                  🔄 Checking image storage...
                 </div>
               )}
+              {storage.warning && (
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-sm mb-2">
+                  ⚠️ {storage.warning}
+                  <button 
+                    type="button" 
+                    onClick={storage.retry}
+                    className="ml-2 underline hover:no-underline text-xs"
+                  >
+                    Retry Check
+                  </button>
+                </div>
+              )}
+              <ImageUpload
+                value={coverImageUrl}
+                onChange={handleImageChange}
+                error={imageUploadError}
+                disabled={loading} // Never disable due to storage - let user try
+              />
             </div>
 
             <div className="sm:col-span-2">

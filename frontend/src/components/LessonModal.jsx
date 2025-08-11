@@ -38,7 +38,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
         drip_delay_minutes: lesson.drip_delay_minutes || 0
       })
       // If editing and we have a module_id, we need to find the course_id and load modules
-      if (lesson.module_id && !lesson.course_id) {
+      if (lesson.module_id) {
         fetchCourseForModule(lesson.module_id)
       }
     } else {

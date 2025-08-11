@@ -27,7 +27,40 @@ class ApiClient {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
 
-      return await response.json()
+      // Handle 204 No Content responses (typical for DELETE operations)
+      if (response.status === 204) {
+        return null // No content to parse
+      }
+
+      // Get response text to check if there's any content
+      let responseText
+      try {
+        responseText = await response.text()
+      } catch (textError) {
+        console.error('Failed to read response text:', textError)
+        return null
+      }
+      
+      // If no text content, return null (empty response)
+      if (!responseText || responseText.trim() === '') {
+        return null
+      }
+
+      // Try to parse as JSON
+      try {
+        return JSON.parse(responseText)
+      } catch (parseError) {
+        // If JSON parsing fails, check if it's expected to be JSON
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          console.error('Expected JSON but got invalid JSON:', responseText)
+          console.error('Parse error:', parseError)
+          throw new Error('Invalid JSON response from server')
+        }
+        // For non-JSON content types, return the text as-is
+        console.warn('Non-JSON response received:', responseText)
+        return responseText
+      }
     } catch (error) {
       console.error('API request failed:', error)
       throw error
@@ -108,8 +141,9 @@ class ApiClient {
     })
   }
 
-  async deleteModule(id) {
-    return this.request(`/modules/${id}`, {
+  async deleteModule(id, cascade = false) {
+    const queryParams = cascade ? '?cascade=true' : ''
+    return this.request(`/modules/${id}${queryParams}`, {
       method: 'DELETE',
     })
   }

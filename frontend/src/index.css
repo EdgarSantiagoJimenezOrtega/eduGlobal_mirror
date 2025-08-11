@@ -40,4 +40,66 @@
   .table-cell {
     @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
   }
+
+  /* Expandable table animations */
+  .expandable-row {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .expand-icon {
+    @apply transition-transform duration-200 ease-in-out;
+  }
+
+  .hierarchy-course {
+    @apply bg-white border-b-2 border-gray-200;
+  }
+
+  .hierarchy-module {
+    @apply bg-gray-50;
+  }
+
+  .hierarchy-lesson {
+    @apply bg-blue-50;
+  }
+
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-primary-500 border-t-transparent;
+  }
+
+  /* Image upload specific styles */
+  .image-upload-drag-active {
+    @apply border-primary-500 bg-primary-50 border-solid;
+  }
+
+  .image-upload-progress {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .image-upload-preview {
+    @apply transition-opacity duration-200;
+  }
+
+  .image-upload-preview:hover {
+    @apply opacity-90;
+  }
+
+  .image-upload-error {
+    @apply shake;
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-2px);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(2px);
+    }
+  }
+
+  .shake {
+    animation: shake 0.5s ease-in-out;
+  }
 }

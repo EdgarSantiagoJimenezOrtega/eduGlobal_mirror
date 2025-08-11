@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { apiClient } from '../lib/api'
 import DeleteCourseModal from './DeleteCourseModal'
+import ModuleModal from './ModuleModal'
+import DeleteModuleModal from './DeleteModuleModal'
+import LessonModal from './LessonModal'
+import DeleteLessonModal from './DeleteLessonModal'
 
 const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [courses, setCourses] = useState([])
@@ -11,6 +15,41 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [totalCount, setTotalCount] = useState(0)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [courseToDelete, setCourseToDelete] = useState(null)
+  
+  // Module modal states
+  const [moduleModalOpen, setModuleModalOpen] = useState(false)
+  const [moduleToEdit, setModuleToEdit] = useState(null)
+  const [deleteModuleModalOpen, setDeleteModuleModalOpen] = useState(false)
+  const [moduleToDelete, setModuleToDelete] = useState(null)
+  
+  // Lesson modal states
+  const [lessonModalOpen, setLessonModalOpen] = useState(false)
+  const [lessonToEdit, setLessonToEdit] = useState(null)
+  const [deleteLessonModalOpen, setDeleteLessonModalOpen] = useState(false)
+  const [lessonToDelete, setLessonToDelete] = useState(null)
+  
+  // Expandable table state with session persistence
+  const [expandedCourses, setExpandedCourses] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eduweb-expanded-courses')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+  const [expandedModules, setExpandedModules] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eduweb-expanded-modules')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+  const [courseModules, setCourseModules] = useState({})
+  const [moduleLessons, setModuleLessons] = useState({})
+  const [loadingModules, setLoadingModules] = useState(new Set())
+  const [loadingLessons, setLoadingLessons] = useState(new Set())
+  
   const itemsPerPage = 10
 
   const fetchCourses = async () => {
@@ -40,6 +79,34 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
     fetchCourses()
   }, [currentPage, refreshTrigger])
 
+  // Persist expanded states to localStorage
+  useEffect(() => {
+    localStorage.setItem('eduweb-expanded-courses', JSON.stringify([...expandedCourses]))
+  }, [expandedCourses])
+
+  useEffect(() => {
+    localStorage.setItem('eduweb-expanded-modules', JSON.stringify([...expandedModules]))
+  }, [expandedModules])
+
+  // Restore expanded data on mount
+  useEffect(() => {
+    if (courses.length > 0) {
+      // Restore modules for expanded courses
+      expandedCourses.forEach(courseId => {
+        if (!courseModules[courseId]) {
+          loadModulesForCourse(courseId)
+        }
+      })
+      
+      // Restore lessons for expanded modules
+      expandedModules.forEach(moduleId => {
+        if (!moduleLessons[moduleId]) {
+          loadLessonsForModule(moduleId)
+        }
+      })
+    }
+  }, [courses])
+
   const handleDelete = (course) => {
     setCourseToDelete(course)
     setDeleteModalOpen(true)
@@ -54,6 +121,177 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
     setCourseToDelete(null)
   }
 
+  // Module handlers
+  const handleEditModule = (module) => {
+    setModuleToEdit(module)
+    setModuleModalOpen(true)
+  }
+
+  const handleDeleteModule = (module) => {
+    setModuleToDelete(module)
+    setDeleteModuleModalOpen(true)
+  }
+
+  const handleModuleModalClose = () => {
+    setModuleModalOpen(false)
+    setModuleToEdit(null)
+  }
+
+  const handleDeleteModuleModalClose = () => {
+    setDeleteModuleModalOpen(false)
+    setModuleToDelete(null)
+  }
+
+  // Lesson handlers
+  const handleEditLesson = (lesson, moduleInfo = null) => {
+    // Add module and course info to lesson for better editing experience
+    const enhancedLesson = {
+      ...lesson,
+      course_id: moduleInfo?.course_id || lesson.course_id,
+      module_course_title: moduleInfo?.course_title
+    }
+    setLessonToEdit(enhancedLesson)
+    setLessonModalOpen(true)
+  }
+
+  const handleDeleteLesson = (lesson) => {
+    setLessonToDelete(lesson)
+    setDeleteLessonModalOpen(true)
+  }
+
+  const handleLessonModalClose = () => {
+    setLessonModalOpen(false)
+    setLessonToEdit(null)
+  }
+
+  const handleDeleteLessonModalClose = () => {
+    setDeleteLessonModalOpen(false)
+    setLessonToDelete(null)
+  }
+
+  // Success handlers that maintain hierarchy state
+  const handleModuleSuccess = async () => {
+    // Refresh the courses data
+    await fetchCourses()
+    
+    // Reload modules for expanded courses to reflect changes
+    const expandedCourseIds = Array.from(expandedCourses)
+    for (const courseId of expandedCourseIds) {
+      await loadModulesForCourse(courseId)
+    }
+  }
+
+  const handleLessonSuccess = async () => {
+    // Refresh the courses data
+    await fetchCourses()
+    
+    // Reload modules for expanded courses
+    const expandedCourseIds = Array.from(expandedCourses)
+    for (const courseId of expandedCourseIds) {
+      await loadModulesForCourse(courseId)
+    }
+    
+    // Reload lessons for expanded modules
+    const expandedModuleIds = Array.from(expandedModules)
+    for (const moduleId of expandedModuleIds) {
+      await loadLessonsForModule(moduleId)
+    }
+  }
+
+  // Expandable functionality
+  const toggleCourse = async (courseId) => {
+    const newExpandedCourses = new Set(expandedCourses)
+    
+    if (expandedCourses.has(courseId)) {
+      newExpandedCourses.delete(courseId)
+      // Also collapse all modules for this course
+      const courseModuleIds = courseModules[courseId]?.map(m => m.id) || []
+      const newExpandedModules = new Set(expandedModules)
+      courseModuleIds.forEach(moduleId => newExpandedModules.delete(moduleId))
+      setExpandedModules(newExpandedModules)
+    } else {
+      newExpandedCourses.add(courseId)
+      // Load modules if not already loaded
+      if (!courseModules[courseId]) {
+        await loadModulesForCourse(courseId)
+      }
+    }
+    
+    setExpandedCourses(newExpandedCourses)
+  }
+
+  const toggleModule = async (moduleId) => {
+    const newExpandedModules = new Set(expandedModules)
+    
+    if (expandedModules.has(moduleId)) {
+      newExpandedModules.delete(moduleId)
+    } else {
+      newExpandedModules.add(moduleId)
+      // Load lessons if not already loaded
+      if (!moduleLessons[moduleId]) {
+        await loadLessonsForModule(moduleId)
+      }
+    }
+    
+    setExpandedModules(newExpandedModules)
+  }
+
+  const loadModulesForCourse = async (courseId) => {
+    if (loadingModules.has(courseId)) return
+    
+    setLoadingModules(prev => new Set(prev).add(courseId))
+    
+    try {
+      const response = await apiClient.getModules({ 
+        course_id: courseId,
+        limit: 100, // Load all modules for a course
+        order_by: 'order',
+        order_direction: 'asc'
+      })
+      
+      setCourseModules(prev => ({
+        ...prev,
+        [courseId]: response.data || []
+      }))
+    } catch (err) {
+      console.error('Error loading modules for course:', courseId, err)
+    } finally {
+      setLoadingModules(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(courseId)
+        return newSet
+      })
+    }
+  }
+
+  const loadLessonsForModule = async (moduleId) => {
+    if (loadingLessons.has(moduleId)) return
+    
+    setLoadingLessons(prev => new Set(prev).add(moduleId))
+    
+    try {
+      const response = await apiClient.getLessons({ 
+        module_id: moduleId,
+        limit: 100, // Load all lessons for a module
+        order_by: 'order',
+        order_direction: 'asc'
+      })
+      
+      setModuleLessons(prev => ({
+        ...prev,
+        [moduleId]: response.data || []
+      }))
+    } catch (err) {
+      console.error('Error loading lessons for module:', moduleId, err)
+    } finally {
+      setLoadingLessons(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(moduleId)
+        return newSet
+      })
+    }
+  }
+
   const filteredCourses = courses.filter(course =>
     course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     course.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,9 +303,21 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   return (
     <div className="card">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">Courses</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Courses, Modules & Lessons</h2>
         
         <div className="flex items-center gap-4 w-full sm:w-auto">
+          <button
+            onClick={() => {
+              setExpandedCourses(new Set())
+              setExpandedModules(new Set())
+              localStorage.removeItem('eduweb-expanded-courses')
+              localStorage.removeItem('eduweb-expanded-modules')
+            }}
+            className="btn-outline text-xs px-2 py-1 whitespace-nowrap"
+            title="Collapse all rows"
+          >
+            Collapse All
+          </button>
           <div className="relative flex-1 sm:flex-initial">
             <input
               type="text"
@@ -93,18 +343,24 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
 
       <div className="overflow-hidden">
         <div className="overflow-x-auto">
+          <div className="text-sm text-gray-500 mb-4 flex items-center gap-2">
+            <span>📚 Course</span>
+            <span>📖 Module</span>
+            <span>📝 Lesson</span>
+            <span>• Click arrows to expand/collapse hierarchy</span>
+          </div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="table-header w-8"></th>
                 <th className="table-header">Title</th>
-                <th className="table-header">Slug</th>
-                <th className="table-header">Category</th>
+                <th className="table-header">Type</th>
                 <th className="table-header">Order</th>
                 <th className="table-header">Status</th>
                 <th className="table-header">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white">
               {loading ? (
                 <tr>
                   <td colSpan="6" className="table-cell text-center py-8">
@@ -122,61 +378,269 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                 </tr>
               ) : (
                 filteredCourses.map((course) => (
-                  <tr key={course.id} className="hover:bg-gray-50">
-                    <td className="table-cell">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {course.title}
-                        </div>
-                        {course.description && (
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {course.description}
+                  <React.Fragment key={course.id}>
+                    {/* Course Row */}
+                    <tr className="hover:bg-gray-50 border-b border-gray-200">
+                      <td className="table-cell w-8">
+                        <button
+                          onClick={() => toggleCourse(course.id)}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors duration-150"
+                        >
+                          <svg 
+                            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                              expandedCourses.has(course.id) ? 'rotate-90' : ''
+                            }`}
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </td>
+                      <td className="table-cell">
+                        <div className="flex items-center">
+                          <span className="text-lg mr-2">📚</span>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {course.title}
+                            </div>
+                            {course.description && (
+                              <div className="text-sm text-gray-500 truncate max-w-xs">
+                                {course.description}
+                              </div>
+                            )}
                           </div>
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          Course
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className="text-sm text-gray-900">
+                          {course.order}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          course.is_locked
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {course.is_locked ? 'Locked' : 'Active'}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => onEdit(course)}
+                            className="text-primary-600 hover:text-primary-900 text-sm font-medium"
+                          >
+                            Edit
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={() => handleDelete(course)}
+                            className="text-red-600 hover:text-red-900 text-sm font-medium"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    
+                    {/* Modules for this course */}
+                    {expandedCourses.has(course.id) && (
+                      <>
+                        {loadingModules.has(course.id) ? (
+                          <tr>
+                            <td colSpan="6" className="bg-gray-50 border-b border-gray-200">
+                              <div className="flex items-center py-4 pl-12">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-500 border-t-transparent"></div>
+                                <span className="ml-2 text-sm text-gray-500">Loading modules for {course.title}...</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : courseModules[course.id]?.length > 0 ? (
+                          courseModules[course.id].map((module) => (
+                            <React.Fragment key={`module-${module.id}`}>
+                              {/* Module Row */}
+                              <tr className="bg-gray-50 hover:bg-gray-100 border-b border-gray-100">
+                                <td className="table-cell pl-12">
+                                  <button
+                                    onClick={() => toggleModule(module.id)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        toggleModule(module.id)
+                                      }
+                                    }}
+                                    className="p-1 hover:bg-gray-200 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    aria-expanded={expandedModules.has(module.id)}
+                                    aria-label={`${expandedModules.has(module.id) ? 'Collapse' : 'Expand'} lessons for ${module.title}`}
+                                  >
+                                    <svg 
+                                      className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                                        expandedModules.has(module.id) ? 'rotate-90' : ''
+                                      }`}
+                                      fill="none" 
+                                      stroke="currentColor" 
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </button>
+                                </td>
+                                <td className="table-cell">
+                                  <div className="flex items-center">
+                                    <span className="text-lg mr-2">📖</span>
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {module.title}
+                                      </div>
+                                      {module.description && (
+                                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                                          {module.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="table-cell">
+                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Module
+                                  </span>
+                                </td>
+                                <td className="table-cell">
+                                  <span className="text-sm text-gray-900">
+                                    {module.order}
+                                  </span>
+                                </td>
+                                <td className="table-cell">
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    module.is_locked
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-green-100 text-green-800'
+                                  }`}>
+                                    {module.is_locked ? 'Locked' : 'Active'}
+                                  </span>
+                                </td>
+                                <td className="table-cell">
+                                  <div className="flex items-center space-x-2">
+                                    <button 
+                                      onClick={() => handleEditModule(module)}
+                                      className="text-primary-600 hover:text-primary-900 text-sm font-medium"
+                                    >
+                                      Edit
+                                    </button>
+                                    <span className="text-gray-300">|</span>
+                                    <button 
+                                      onClick={() => handleDeleteModule(module)}
+                                      className="text-red-600 hover:text-red-900 text-sm font-medium"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                              
+                              {/* Lessons for this module */}
+                              {expandedModules.has(module.id) && (
+                                <>
+                                  {loadingLessons.has(module.id) ? (
+                                    <tr>
+                                      <td colSpan="6" className="bg-blue-50 border-b border-gray-100">
+                                        <div className="flex items-center py-4 pl-20">
+                                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-500 border-t-transparent"></div>
+                                          <span className="ml-2 text-sm text-gray-500">Loading lessons for {module.title}...</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ) : moduleLessons[module.id]?.length > 0 ? (
+                                    moduleLessons[module.id].map((lesson) => (
+                                      <tr key={`lesson-${lesson.id}`} className="bg-blue-50 hover:bg-blue-100 border-b border-gray-100">
+                                        <td className="table-cell pl-20">
+                                          {/* No expand button for lessons */}
+                                        </td>
+                                        <td className="table-cell">
+                                          <div className="flex items-center">
+                                            <span className="text-lg mr-2">📝</span>
+                                            <div>
+                                              <div className="text-sm font-medium text-gray-900">
+                                                {lesson.title}
+                                              </div>
+                                              {lesson.video_url && (
+                                                <div className="text-xs text-gray-500">
+                                                  Video: {lesson.video_url}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td className="table-cell">
+                                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                            Lesson
+                                          </span>
+                                        </td>
+                                        <td className="table-cell">
+                                          <span className="text-sm text-gray-900">
+                                            {lesson.order}
+                                          </span>
+                                        </td>
+                                        <td className="table-cell">
+                                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            Active
+                                          </span>
+                                        </td>
+                                        <td className="table-cell">
+                                          <div className="flex items-center space-x-2">
+                                            <button 
+                                              onClick={() => handleEditLesson(lesson, { 
+                                                course_id: course.id,
+                                                course_title: course.title 
+                                              })}
+                                              className="text-primary-600 hover:text-primary-900 text-sm font-medium"
+                                            >
+                                              Edit
+                                            </button>
+                                            <span className="text-gray-300">|</span>
+                                            <button 
+                                              onClick={() => handleDeleteLesson(lesson)}
+                                              className="text-red-600 hover:text-red-900 text-sm font-medium"
+                                            >
+                                              Delete
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))
+                                  ) : (
+                                    <tr>
+                                      <td colSpan="6" className="bg-blue-50 border-b border-gray-100">
+                                        <div className="text-center py-4 pl-20 text-sm text-gray-500">
+                                          No lessons found for this module
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </>
+                              )}
+                            </React.Fragment>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="6" className="bg-gray-50 border-b border-gray-200">
+                              <div className="text-center py-4 pl-12 text-sm text-gray-500">
+                                No modules found for this course
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </div>
-                    </td>
-                    <td className="table-cell">
-                      <span className="text-sm font-mono text-gray-600">
-                        {course.slug}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <span className="text-sm text-gray-900">
-                        {course.category_id || 'Uncategorized'}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <span className="text-sm text-gray-900">
-                        {course.order}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        course.is_locked
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {course.is_locked ? 'Locked' : 'Active'}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => onEdit(course)}
-                          className="text-primary-600 hover:text-primary-900 text-sm font-medium"
-                        >
-                          Edit
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <button
-                          onClick={() => handleDelete(course)}
-                          className="text-red-600 hover:text-red-900 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>
@@ -258,12 +722,40 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
         </div>
       )}
 
-      {/* Delete Modal */}
+      {/* Delete Course Modal */}
       <DeleteCourseModal
         isOpen={deleteModalOpen}
         onClose={handleDeleteModalClose}
         course={courseToDelete}
         onSuccess={handleDeleteSuccess}
+      />
+
+      {/* Module Modals */}
+      <ModuleModal
+        isOpen={moduleModalOpen}
+        onClose={handleModuleModalClose}
+        module={moduleToEdit}
+        onSuccess={handleModuleSuccess}
+      />
+      <DeleteModuleModal
+        isOpen={deleteModuleModalOpen}
+        onClose={handleDeleteModuleModalClose}
+        module={moduleToDelete}
+        onSuccess={handleModuleSuccess}
+      />
+
+      {/* Lesson Modals */}
+      <LessonModal
+        isOpen={lessonModalOpen}
+        onClose={handleLessonModalClose}
+        lesson={lessonToEdit}
+        onSuccess={handleLessonSuccess}
+      />
+      <DeleteLessonModal
+        isOpen={deleteLessonModalOpen}
+        onClose={handleDeleteLessonModalClose}
+        lesson={lessonToDelete}
+        onSuccess={handleLessonSuccess}
       />
     </div>
   )
