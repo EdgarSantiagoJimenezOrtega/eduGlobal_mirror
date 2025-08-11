@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiClient } from '../lib/api'
+import MarkdownEditor from './MarkdownEditor'
 
 const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
     order: 0,
     drip_delay_minutes: 0
   })
+  const [hasVideo, setHasVideo] = useState(false)
   const [courses, setCourses] = useState([])
   const [modules, setModules] = useState([])
   const [loading, setLoading] = useState(false)
@@ -37,6 +39,8 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
         order: lesson.order || 0,
         drip_delay_minutes: lesson.drip_delay_minutes || 0
       })
+      // Set hasVideo based on whether lesson has a video URL
+      setHasVideo(!!(lesson.video_url && lesson.video_url.trim()))
       // If editing and we have a module_id, we need to find the course_id and load modules
       if (lesson.module_id) {
         fetchCourseForModule(lesson.module_id)
@@ -51,6 +55,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
         order: 0,
         drip_delay_minutes: 0
       })
+      setHasVideo(false)
       setModules([])
     }
     setError('')
@@ -111,6 +116,17 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
     }))
   }
 
+  const handleHasVideoChange = (checked) => {
+    setHasVideo(checked)
+    // If video is disabled, clear the video URL
+    if (!checked) {
+      setFormData(prev => ({
+        ...prev,
+        video_url: ''
+      }))
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -124,6 +140,10 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
       }
       if (!formData.module_id) {
         throw new Error('Module selection is required')
+      }
+      // Conditional video validation
+      if (hasVideo && !formData.video_url.trim()) {
+        throw new Error('Video URL is required when "This lesson has video" is enabled')
       }
 
       const dataToSubmit = {
@@ -252,35 +272,86 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
               />
             </div>
 
-            <div className="sm:col-span-2">
-              <label htmlFor="video_url" className="block text-sm font-medium text-gray-700 mb-1">
-                Video URL
-              </label>
-              <input
-                type="url"
-                id="video_url"
-                className="input-field"
-                placeholder="https://example.com/video.mp4"
-                value={formData.video_url}
-                onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
-              />
+            {/* Video Section */}
+            <div className="sm:col-span-2 space-y-3">
+              {/* Video Checkbox */}
+              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <input
+                  type="checkbox"
+                  id="has_video"
+                  checked={hasVideo}
+                  onChange={(e) => handleHasVideoChange(e.target.checked)}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="has_video" className="text-sm font-medium text-gray-900">
+                  📹 This lesson has a video
+                </label>
+                <div className="text-xs text-gray-600">
+                  Check this if your lesson includes a main video file
+                </div>
+              </div>
+
+              {/* Video URL Field - Conditional */}
+              <div className={`transition-all duration-300 ${hasVideo ? 'opacity-100' : 'opacity-50'}`}>
+                <label htmlFor="video_url" className="block text-sm font-medium text-gray-700 mb-1">
+                  Video URL {hasVideo && <span className="text-red-500">*</span>}
+                  {!hasVideo && <span className="text-gray-500">(optional)</span>}
+                </label>
+                <input
+                  type="url"
+                  id="video_url"
+                  required={hasVideo}
+                  disabled={!hasVideo}
+                  className={`input-field ${
+                    hasVideo 
+                      ? 'bg-white border-gray-300' 
+                      : 'bg-gray-100 border-gray-200 cursor-not-allowed'
+                  }`}
+                  placeholder={hasVideo ? "https://example.com/video.mp4" : "Enable video checkbox above to add video URL"}
+                  value={formData.video_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                />
+                {hasVideo && (
+                  <p className="mt-1 text-xs text-gray-600">
+                    💡 Add the direct URL to your main lesson video (MP4, YouTube, Vimeo, etc.)
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="support_content" className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Support Content
               </label>
-              <textarea
-                id="support_content"
-                rows={4}
-                className="input-field"
-                placeholder="Enter HTML content or lesson notes..."
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                <div className="text-xs text-gray-600 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span>📋</span>
+                    <strong>Support Content:</strong> Additional materials, notes, resources, and formatted text content
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>📹</span>
+                    <strong>Main Video:</strong> Goes in the "Video URL" field above (not here)
+                  </div>
+                </div>
+              </div>
+              <MarkdownEditor
                 value={formData.support_content}
-                onChange={(e) => setFormData(prev => ({ ...prev, support_content: e.target.value }))}
+                onChange={(content) => setFormData(prev => ({ ...prev, support_content: content }))}
+                placeholder="Add lesson notes, resources, instructions, or additional content...
+
+**Example:**
+# Lesson Resources
+- [Download PDF](link-to-pdf)
+- [Code Examples](link-to-code)
+
+## Key Points
+1. Important concept A
+2. Important concept B
+
+*Note: Images and links are supported, but main lesson video should go in Video URL field above.*"
+                disabled={loading || coursesLoading || modulesLoading}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                HTML content is supported for rich formatting
-              </p>
             </div>
 
             <div>
