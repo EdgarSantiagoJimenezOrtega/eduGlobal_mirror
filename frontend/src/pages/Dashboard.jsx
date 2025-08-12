@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import CoursesTable from '../components/CoursesTable'
 import CourseModal from '../components/CourseModal'
 import ModuleModal from '../components/ModuleModal'
 import LessonModal from '../components/LessonModal'
+import { apiClient } from '../lib/api'
 
 const Dashboard = () => {
   // Course modal states
@@ -19,6 +20,15 @@ const Dashboard = () => {
   const [selectedLesson, setSelectedLesson] = useState(null)
   
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  
+  // Dashboard statistics state
+  const [dashboardStats, setDashboardStats] = useState({
+    totalCourses: 0,
+    activeStudents: 0,
+    completionRate: '0%'
+  })
+  const [statsLoading, setStatsLoading] = useState(true)
+  const [statsError, setStatsError] = useState('')
 
   const handleAddCourse = () => {
     setSelectedCourse(null)
@@ -37,7 +47,28 @@ const Dashboard = () => {
 
   const handleSuccess = () => {
     setRefreshTrigger(prev => prev + 1)
+    fetchDashboardStats()
   }
+
+  // Fetch dashboard statistics
+  const fetchDashboardStats = async () => {
+    try {
+      setStatsLoading(true)
+      setStatsError('')
+      const stats = await apiClient.getDashboardStats()
+      setDashboardStats(stats)
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+      setStatsError('Failed to load dashboard statistics')
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
+  // Load dashboard stats on component mount and when refreshTrigger changes
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [refreshTrigger])
 
   // Module handlers
   const handleAddModule = () => {
@@ -116,6 +147,7 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Total Courses Widget */}
           <div className="card-gradient">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -125,11 +157,18 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-white">Total Courses</h3>
-                <p className="text-2xl font-bold text-white">12</p>
+                {statsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-white bg-opacity-20 rounded w-16"></div>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold text-white">{dashboardStats.totalCourses}</p>
+                )}
               </div>
             </div>
           </div>
 
+          {/* Active Students Widget */}
           <div className="card">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -141,11 +180,21 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900">Active Students</h3>
-                <p className="text-2xl font-bold text-gray-900">1,247</p>
+                {statsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">{dashboardStats.activeStudents}</p>
+                    <p className="text-xs text-gray-500 mt-1">Students module not connected yet</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
+          {/* Completion Rate Widget */}
           <div className="card">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -157,11 +206,29 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900">Completion Rate</h3>
-                <p className="text-2xl font-bold text-gray-900">87%</p>
+                {statsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900">{dashboardStats.completionRate}</p>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Error message */}
+        {statsError && (
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <div className="flex">
+              <svg className="w-5 h-5 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span>{statsError}</span>
+            </div>
+          </div>
+        )}
 
         {/* Courses Table */}
         <CoursesTable 

@@ -32,7 +32,7 @@ router.get('/',
               slug
             )
           )
-        `)
+        `, { count: 'exact' })
         .order(order_by, { ascending: order_direction === 'asc' })
         .range(offset, offset + limit - 1);
 

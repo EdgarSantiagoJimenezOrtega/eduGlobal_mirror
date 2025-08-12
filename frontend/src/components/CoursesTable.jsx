@@ -11,6 +11,8 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [categories, setCategories] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -64,6 +66,11 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
         order_direction: 'asc'
       }
 
+      // Add category filter if selected
+      if (selectedCategoryId) {
+        params.category_id = selectedCategoryId
+      }
+
       const response = await apiClient.getCourses(params)
       setCourses(response.data || [])
       setTotalCount(response.pagination?.total || 0)
@@ -75,9 +82,34 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
     }
   }
 
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiClient.getCategories({
+          is_active: true,
+          order_by: 'order',
+          order_direction: 'asc'
+        })
+        setCategories(response.data || [])
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
   useEffect(() => {
     fetchCourses()
-  }, [currentPage, refreshTrigger])
+  }, [currentPage, refreshTrigger, selectedCategoryId])
+
+  // Reset to page 1 when category filter changes
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    }
+  }, [selectedCategoryId])
 
   // Persist expanded states to localStorage
   useEffect(() => {
@@ -318,18 +350,40 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
           >
             Collapse All
           </button>
-          <div className="relative flex-1 sm:flex-initial">
-            <input
-              type="text"
-              placeholder="Search courses..."
-              className="input-field pl-10 w-full sm:w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+          <div className="flex items-center space-x-3 flex-1 sm:flex-initial">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search courses..."
+                className="input-field pl-10 w-full sm:w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="relative">
+              <select
+                className="input-field appearance-none pr-10 w-40"
+                value={selectedCategoryId}
+                onChange={(e) => setSelectedCategoryId(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -401,12 +455,25 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                       <td className="table-cell">
                         <div className="flex items-center">
                           <span className="text-lg mr-2">📚</span>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {course.title}
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <div className="text-sm font-medium text-gray-900">
+                                {course.title}
+                              </div>
+                              {course.categories && (
+                                <div className="flex items-center">
+                                  <div 
+                                    className="w-3 h-3 rounded-full mr-1" 
+                                    style={{ backgroundColor: course.categories.color }}
+                                  />
+                                  <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                                    {course.categories.name}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             {course.description && (
-                              <div className="text-sm text-gray-500 truncate max-w-xs">
+                              <div className="text-sm text-gray-500 truncate max-w-xs mt-1">
                                 {course.description}
                               </div>
                             )}

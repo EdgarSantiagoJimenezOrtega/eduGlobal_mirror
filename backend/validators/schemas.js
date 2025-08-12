@@ -95,6 +95,29 @@ const favoriteSchema = {
   }).min(1)
 };
 
+// Category validation schemas
+const categorySchema = {
+  create: Joi.object({
+    name: Joi.string().required().min(1).max(255).trim(),
+    slug: Joi.string().required().min(1).max(255).trim().pattern(/^[a-z0-9-]+$/),
+    description: Joi.string().allow('').max(1000).trim(),
+    color: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).default('#8B5CF6'),
+    icon: Joi.string().allow('').max(100).trim(),
+    order: Joi.number().integer().min(0).default(0),
+    is_active: Joi.boolean().default(true)
+  }),
+  
+  update: Joi.object({
+    name: Joi.string().min(1).max(255).trim(),
+    slug: Joi.string().min(1).max(255).trim().pattern(/^[a-z0-9-]+$/),
+    description: Joi.string().allow('').max(1000).trim(),
+    color: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/),
+    icon: Joi.string().allow('').max(100).trim(),
+    order: Joi.number().integer().min(0),
+    is_active: Joi.boolean()
+  }).min(1)
+};
+
 // Common parameter validations
 const paramValidation = {
   id: Joi.number().integer().positive().required(),
@@ -105,14 +128,16 @@ const paramValidation = {
 const queryValidation = {
   limit: Joi.number().integer().min(1).max(100).default(50),
   offset: Joi.number().integer().min(0).default(0),
-  order_by: Joi.string().valid('id', 'title', 'order').default('order'),
+  order_by: Joi.string().valid('id', 'title', 'order', 'name').default('order'),
   order_direction: Joi.string().valid('asc', 'desc').default('asc'),
   course_id: Joi.number().integer().positive(),
   module_id: Joi.number().integer().positive(),
+  category_id: Joi.number().integer().positive(),
   user_id: Joi.string().uuid(),
   item_type: Joi.string().valid('course', 'module', 'lesson'),
   is_completed: Joi.boolean(),
-  is_locked: Joi.boolean()
+  is_locked: Joi.boolean(),
+  is_active: Joi.boolean()
 };
 
 module.exports = {
@@ -121,6 +146,7 @@ module.exports = {
   lessonSchema,
   userProgressSchema,
   favoriteSchema,
+  categorySchema,
   paramValidation,
   queryValidation
 };

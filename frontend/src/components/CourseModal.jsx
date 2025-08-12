@@ -17,6 +17,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
   const [error, setError] = useState('')
   const [coverImageUrl, setCoverImageUrl] = useState('')
   const [imageUploadError, setImageUploadError] = useState('')
+  const [categories, setCategories] = useState([])
+  const [categoriesLoading, setCategoriesLoading] = useState(false)
   const storage = useStorage()
 
   const isEditing = !!course
@@ -47,6 +49,29 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
     }
     setError('')
   }, [course, isOpen])
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (isOpen) {
+        setCategoriesLoading(true)
+        try {
+          const response = await apiClient.getCategories({
+            is_active: true,
+            order_by: 'order',
+            order_direction: 'asc'
+          })
+          setCategories(response.data || [])
+        } catch (error) {
+          console.error('Error fetching categories:', error)
+        } finally {
+          setCategoriesLoading(false)
+        }
+      }
+    }
+
+    fetchCategories()
+  }, [isOpen])
 
   const generateSlug = (title) => {
     return title
@@ -192,16 +217,32 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
 
             <div>
               <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
-                Category ID
+                Category
               </label>
-              <input
-                type="number"
-                id="category_id"
-                className="input-field"
-                placeholder="1"
-                value={formData.category_id}
-                onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
-              />
+              <div className="relative">
+                <select
+                  id="category_id"
+                  className="input-field appearance-none pr-10"
+                  value={formData.category_id}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
+                  disabled={categoriesLoading}
+                >
+                  <option value="">No category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              {categoriesLoading && (
+                <p className="mt-1 text-xs text-gray-500">Loading categories...</p>
+              )}
             </div>
 
             <div>

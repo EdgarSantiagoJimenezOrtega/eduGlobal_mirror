@@ -40,7 +40,7 @@ router.get('/',
               )
             )
           )
-        `)
+        `, { count: 'exact' })
         .order(order_by === 'completed_at' ? 'completed_at' : 'id', { ascending: order_direction === 'asc' })
         .range(offset, offset + limit - 1);
 
