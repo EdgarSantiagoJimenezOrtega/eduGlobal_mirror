@@ -22,13 +22,18 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // CORS configuration
+console.log('🔧 CORS Debug - ALLOWED_ORIGINS env var:', process.env.ALLOWED_ORIGINS);
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000'];
+console.log('🔧 CORS Debug - Parsed origins:', allowedOrigins);
+
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true,
   optionsSuccessStatus: 200
 };
+console.log('🔧 CORS Debug - Final options:', corsOptions);
 app.use(cors(corsOptions));
 
 // Logging middleware
