@@ -7,7 +7,8 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
     title: '',
     description: '',
     order: 0,
-    is_locked: false
+    is_locked: false,
+    drip_content: false
   })
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(false)
@@ -29,7 +30,8 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
         title: module.title || '',
         description: module.description || '',
         order: module.order || 0,
-        is_locked: module.is_locked || false
+        is_locked: module.is_locked || false,
+        drip_content: module.drip_content || false
       })
     } else {
       setFormData({
@@ -37,7 +39,8 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
         title: '',
         description: '',
         order: 0,
-        is_locked: false
+        is_locked: false,
+        drip_content: false
       })
     }
     setError('')
@@ -193,17 +196,35 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
               </p>
             </div>
 
-            <div className="flex items-center">
-              <input
-                id="is_locked"
-                type="checkbox"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                checked={formData.is_locked}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_locked: e.target.checked }))}
-              />
-              <label htmlFor="is_locked" className="ml-2 block text-sm text-gray-900">
-                Lock this module (students cannot access)
-              </label>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  id="is_locked"
+                  type="checkbox"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  checked={formData.is_locked}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_locked: e.target.checked }))}
+                />
+                <label htmlFor="is_locked" className="ml-2 block text-sm text-gray-900">
+                  Lock this module (students cannot access)
+                </label>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <input
+                  type="checkbox"
+                  id="drip_content"
+                  checked={formData.drip_content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, drip_content: e.target.checked }))}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label htmlFor="drip_content" className="text-sm font-medium text-gray-900">
+                  🔒 Drip Content
+                </label>
+                <div className="text-xs text-gray-600">
+                  Enable drip content for this module
+                </div>
+              </div>
             </div>
           </div>
 

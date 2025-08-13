@@ -10,7 +10,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
     video_url: '',
     support_content: '',
     order: 0,
-    drip_delay_minutes: 0
+    drip_content: false
   })
   const [hasVideo, setHasVideo] = useState(false)
   const [courses, setCourses] = useState([])
@@ -37,7 +37,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
         video_url: lesson.video_url || '',
         support_content: lesson.support_content || '',
         order: lesson.order || 0,
-        drip_delay_minutes: lesson.drip_delay_minutes || 0
+        drip_content: lesson.drip_content || false
       })
       // Set hasVideo based on whether lesson has a video URL
       setHasVideo(!!(lesson.video_url && lesson.video_url.trim()))
@@ -53,9 +53,9 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
         video_url: '',
         support_content: '',
         order: 0,
-        drip_delay_minutes: 0
+        drip_content: false
       })
-      setHasVideo(false)
+      setHasVideo(true)
       setModules([])
     }
     setError('')
@@ -152,7 +152,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
         video_url: formData.video_url.trim() || '',
         support_content: formData.support_content.trim() || '',
         order: parseInt(formData.order) || 0,
-        drip_delay_minutes: parseInt(formData.drip_delay_minutes) || 0
+        drip_content: formData.drip_content
       }
 
       console.log('🚀 Frontend sending lesson data:', JSON.stringify(dataToSubmit, null, 2))
@@ -372,21 +372,21 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
             </div>
 
             <div>
-              <label htmlFor="drip_delay_minutes" className="block text-sm font-medium text-gray-700 mb-1">
-                Drip Delay (minutes)
-              </label>
-              <input
-                type="number"
-                id="drip_delay_minutes"
-                min="0"
-                className="input-field"
-                placeholder="0"
-                value={formData.drip_delay_minutes}
-                onChange={(e) => setFormData(prev => ({ ...prev, drip_delay_minutes: e.target.value }))}
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                How long to wait before releasing this lesson (0 = immediate)
-              </p>
+              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <input
+                  type="checkbox"
+                  id="drip_content"
+                  checked={formData.drip_content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, drip_content: e.target.checked }))}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label htmlFor="drip_content" className="text-sm font-medium text-gray-900">
+                  🔒 Drip Content
+                </label>
+                <div className="text-xs text-gray-600">
+                  Enable drip content for this lesson
+                </div>
+              </div>
             </div>
           </div>
 

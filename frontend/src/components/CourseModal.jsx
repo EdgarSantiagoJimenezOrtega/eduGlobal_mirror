@@ -11,7 +11,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
     category_id: '',
     order: 0,
     cover_images: [],
-    is_locked: false
+    is_locked: false,
+    drip_content: false
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -32,7 +33,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
         category_id: course.category_id || '',
         order: course.order || 0,
         cover_images: course.cover_images || [],
-        is_locked: course.is_locked || false
+        is_locked: course.is_locked || false,
+        drip_content: course.drip_content || false
       })
       setCoverImageUrl(course.cover_images?.[0] || '')
     } else {
@@ -43,7 +45,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
         category_id: '',
         order: 0,
         cover_images: [],
-        is_locked: false
+        is_locked: false,
+        drip_content: false
       })
       setCoverImageUrl('')
     }
@@ -288,7 +291,7 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
               />
             </div>
 
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 space-y-3">
               <div className="flex items-center">
                 <input
                   id="is_locked"
@@ -300,6 +303,22 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
                 <label htmlFor="is_locked" className="ml-2 block text-sm text-gray-900">
                   Lock this course (students cannot access)
                 </label>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <input
+                  type="checkbox"
+                  id="drip_content"
+                  checked={formData.drip_content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, drip_content: e.target.checked }))}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label htmlFor="drip_content" className="text-sm font-medium text-gray-900">
+                  🔒 Drip Content
+                </label>
+                <div className="text-xs text-gray-600">
+                  Enable drip content for this course
+                </div>
               </div>
             </div>
           </div>
