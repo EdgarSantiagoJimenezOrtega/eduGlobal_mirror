@@ -31,6 +31,7 @@ function App() {
               } 
             />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>
