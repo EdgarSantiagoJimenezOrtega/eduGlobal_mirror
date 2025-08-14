@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import logoImage from '../assets/evo_log_am.png'
+import logoImage from '../assets/EvoEducation_Lg.png'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -39,7 +39,7 @@ const Login = () => {
               <img 
                 src={logoImage} 
                 alt="EVO GLOBAL" 
-                className="h- w-auto -mb-4 -mt-4"
+                className="h-32 w-auto mb-4 -mt-4"
               />
             </div>
           </div>
