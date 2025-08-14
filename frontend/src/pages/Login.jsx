@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
+import logoImage from '../assets/evo_log_am.png'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -32,14 +33,15 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50">
       <div className="max-w-md w-full space-y-8 p-8">
-        <div className="card">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              EVO GLOBAL
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Admin Panel Access
-            </p>
+        <div className="card mb-8">
+          <div className="text-center -mb-8">
+            <div className="flex justify-center mb-2">
+              <img 
+                src={logoImage} 
+                alt="EVO GLOBAL" 
+                className="h- w-auto -mb-4 -mt-4"
+              />
+            </div>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
