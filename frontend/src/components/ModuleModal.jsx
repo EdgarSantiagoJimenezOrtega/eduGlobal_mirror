@@ -15,7 +15,7 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
   const [coursesLoading, setCoursesLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const isEditing = !!module
+  const isEditing = !!module && !!module.id // Only editing if module has an id
 
   useEffect(() => {
     if (isOpen) {
@@ -126,6 +126,11 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
             <div className="sm:col-span-2">
               <label htmlFor="course_id" className="block text-sm font-medium text-gray-700 mb-1">
                 Course *
+                {module && module.course_title && (
+                  <span className="text-sm text-blue-600 font-normal ml-2">
+                    (Creating module for "{module.course_title}")
+                  </span>
+                )}
               </label>
               {coursesLoading ? (
                 <div className="input-field bg-gray-50 flex items-center justify-center">
@@ -139,6 +144,7 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
                   className="input-field"
                   value={formData.course_id}
                   onChange={(e) => setFormData(prev => ({ ...prev, course_id: e.target.value }))}
+                  disabled={module && module.course_id && !isEditing} // Disable if precargado para nuevo módulo
                 >
                   <option value="">Select a course</option>
                   {courses.map((course) => (

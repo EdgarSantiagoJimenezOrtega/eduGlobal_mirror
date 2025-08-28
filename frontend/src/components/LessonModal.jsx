@@ -20,7 +20,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
   const [modulesLoading, setModulesLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const isEditing = !!lesson
+  const isEditing = !!lesson && !!lesson.id // Only editing if lesson has an id
 
   useEffect(() => {
     if (isOpen) {
@@ -41,8 +41,13 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
       })
       // Set hasVideo based on whether lesson has a video URL
       setHasVideo(!!(lesson.video_url && lesson.video_url.trim()))
+      
+      // If we have course_id (precargado), load modules for that course
+      if (lesson.course_id) {
+        fetchModules(lesson.course_id)
+      }
       // If editing and we have a module_id, we need to find the course_id and load modules
-      if (lesson.module_id) {
+      else if (lesson.module_id && isEditing) {
         fetchCourseForModule(lesson.module_id)
       }
     } else {
@@ -202,6 +207,11 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
             <div>
               <label htmlFor="course_id" className="block text-sm font-medium text-gray-700 mb-1">
                 Course *
+                {lesson && lesson.course_title && (
+                  <span className="text-sm text-blue-600 font-normal ml-2">
+                    ("{lesson.course_title}")
+                  </span>
+                )}
               </label>
               {coursesLoading ? (
                 <div className="input-field bg-gray-50 flex items-center justify-center">
@@ -215,6 +225,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
                   className="input-field"
                   value={formData.course_id}
                   onChange={(e) => handleCourseChange(e.target.value)}
+                  disabled={lesson && lesson.course_id && !isEditing} // Disable if precargado para nueva lección
                 >
                   <option value="">Select a course</option>
                   {courses.map((course) => (
@@ -230,6 +241,11 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
             <div>
               <label htmlFor="module_id" className="block text-sm font-medium text-gray-700 mb-1">
                 Module *
+                {lesson && lesson.module_title && (
+                  <span className="text-sm text-purple-600 font-normal ml-2">
+                    (Creating lesson for "{lesson.module_title}")
+                  </span>
+                )}
               </label>
               {modulesLoading ? (
                 <div className="input-field bg-gray-50 flex items-center justify-center">
@@ -240,7 +256,7 @@ const LessonModal = ({ isOpen, onClose, lesson, onSuccess }) => {
                 <select
                   id="module_id"
                   required
-                  disabled={!formData.course_id}
+                  disabled={!formData.course_id || (lesson && lesson.module_id && !isEditing)}
                   className="input-field disabled:bg-gray-100 disabled:cursor-not-allowed"
                   value={formData.module_id}
                   onChange={(e) => setFormData(prev => ({ ...prev, module_id: e.target.value }))}
