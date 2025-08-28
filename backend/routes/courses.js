@@ -19,6 +19,8 @@ router.get('/',
           title,
           slug,
           description,
+          author,
+          language,
           category_id,
           order,
           cover_images,
@@ -84,6 +86,8 @@ router.get('/:id',
           title,
           slug,
           description,
+          author,
+          language,
           category_id,
           order,
           cover_images,
@@ -134,6 +138,8 @@ router.post('/',
         title: typeof req.body.title,
         slug: typeof req.body.slug,
         description: typeof req.body.description,
+        author: typeof req.body.author,
+        language: typeof req.body.language,
         category_id: typeof req.body.category_id,
         order: typeof req.body.order,
         cover_images: typeof req.body.cover_images,
@@ -190,6 +196,21 @@ router.put('/:id',
     try {
       const { id } = req.params;
       const updateData = req.body;
+      
+      console.log('🔄 PUT /api/courses/:id - Updating course');
+      console.log('📝 Course ID:', id);
+      console.log('📝 Update data received:', JSON.stringify(updateData, null, 2));
+      console.log('📋 Update data types:', {
+        title: typeof updateData.title,
+        slug: typeof updateData.slug,
+        description: typeof updateData.description,
+        author: typeof updateData.author,
+        language: typeof updateData.language,
+        category_id: typeof updateData.category_id,
+        order: typeof updateData.order,
+        cover_images: typeof updateData.cover_images,
+        is_locked: typeof updateData.is_locked
+      });
 
       // If updating slug, check if it already exists (excluding current course)
       if (updateData.slug) {
@@ -209,12 +230,17 @@ router.put('/:id',
         }
       }
 
+      console.log('🗄️ Attempting database update with data:', updateData);
+      
       const { data, error } = await supabase
         .from('courses')
         .update(updateData)
         .eq('id', id)
         .select()
         .single();
+
+      console.log('📊 Database response - data:', data);
+      console.log('📊 Database response - error:', error);
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -231,6 +257,7 @@ router.put('/:id',
         });
       }
 
+      console.log('✅ Course updated successfully:', data);
       res.status(200).json(data);
     } catch (error) {
       console.error('Server error:', error);

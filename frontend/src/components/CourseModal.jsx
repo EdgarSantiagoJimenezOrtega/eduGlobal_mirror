@@ -8,6 +8,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
     title: '',
     slug: '',
     description: '',
+    author: '',
+    language: '',
     category_id: '',
     order: 0,
     cover_images: [],
@@ -30,6 +32,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
         title: course.title || '',
         slug: course.slug || '',
         description: course.description || '',
+        author: course.author || '',
+        language: course.language || '',
         category_id: course.category_id || '',
         order: course.order || 0,
         cover_images: course.cover_images || [],
@@ -42,6 +46,8 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
         title: '',
         slug: '',
         description: '',
+        author: '',
+        language: '',
         category_id: '',
         order: 0,
         cover_images: [],
@@ -216,6 +222,48 @@ const CourseModal = ({ isOpen, onClose, course, onSuccess }) => {
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               />
+            </div>
+
+            <div>
+              <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
+                Author
+              </label>
+              <input
+                type="text"
+                id="author"
+                className="input-field"
+                placeholder="Course author name"
+                value={formData.author}
+                onChange={(e) => setFormData(prev => ({ ...prev, author: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
+                Language
+              </label>
+              <select
+                id="language"
+                className="input-field appearance-none pr-10"
+                value={formData.language}
+                onChange={(e) => setFormData(prev => ({ ...prev, language: e.target.value }))}
+              >
+                <option value="">Select language</option>
+                <option value="English">English</option>
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+                <option value="Portuguese">Portuguese</option>
+                <option value="Italian">Italian</option>
+                <option value="Dutch">Dutch</option>
+                <option value="Russian">Russian</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Korean">Korean</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             <div>

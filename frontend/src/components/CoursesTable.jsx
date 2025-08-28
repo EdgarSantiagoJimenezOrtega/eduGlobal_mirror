@@ -327,7 +327,9 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const filteredCourses = courses.filter(course =>
     course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     course.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.language?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const totalPages = Math.ceil(totalCount / itemsPerPage)
@@ -408,6 +410,8 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
               <tr>
                 <th className="table-header w-8"></th>
                 <th className="table-header">Title</th>
+                <th className="table-header">Author</th>
+                <th className="table-header">Language</th>
                 <th className="table-header">Type</th>
                 <th className="table-header">Order</th>
                 <th className="table-header">Status</th>
@@ -417,7 +421,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
             <tbody className="bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="table-cell text-center py-8">
+                  <td colSpan="8" className="table-cell text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent"></div>
                       <span className="ml-2 text-gray-500">Loading courses...</span>
@@ -426,7 +430,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                 </tr>
               ) : filteredCourses.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="table-cell text-center py-8 text-gray-500">
+                  <td colSpan="8" className="table-cell text-center py-8 text-gray-500">
                     {searchTerm ? 'No courses found matching your search.' : 'No courses found. Create your first course!'}
                   </td>
                 </tr>
@@ -481,6 +485,16 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                         </div>
                       </td>
                       <td className="table-cell">
+                        <span className="text-sm text-gray-900">
+                          {course.author || '-'}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className="text-sm text-gray-900">
+                          {course.language || '-'}
+                        </span>
+                      </td>
+                      <td className="table-cell">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                           Course
                         </span>
@@ -523,7 +537,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                       <>
                         {loadingModules.has(course.id) ? (
                           <tr>
-                            <td colSpan="6" className="bg-gray-50 border-b border-gray-200">
+                            <td colSpan="8" className="bg-gray-50 border-b border-gray-200">
                               <div className="flex items-center py-4 pl-12">
                                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-500 border-t-transparent"></div>
                                 <span className="ml-2 text-sm text-gray-500">Loading modules for {course.title}...</span>
@@ -576,6 +590,12 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                                   </div>
                                 </td>
                                 <td className="table-cell">
+                                  <span className="text-sm text-gray-400">-</span>
+                                </td>
+                                <td className="table-cell">
+                                  <span className="text-sm text-gray-400">-</span>
+                                </td>
+                                <td className="table-cell">
                                   <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                     Module
                                   </span>
@@ -618,7 +638,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                                 <>
                                   {loadingLessons.has(module.id) ? (
                                     <tr>
-                                      <td colSpan="6" className="bg-blue-50 border-b border-gray-100">
+                                      <td colSpan="8" className="bg-blue-50 border-b border-gray-100">
                                         <div className="flex items-center py-4 pl-20">
                                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-500 border-t-transparent"></div>
                                           <span className="ml-2 text-sm text-gray-500">Loading lessons for {module.title}...</span>
@@ -645,6 +665,12 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                                               )}
                                             </div>
                                           </div>
+                                        </td>
+                                        <td className="table-cell">
+                                          <span className="text-sm text-gray-400">-</span>
+                                        </td>
+                                        <td className="table-cell">
+                                          <span className="text-sm text-gray-400">-</span>
                                         </td>
                                         <td className="table-cell">
                                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
@@ -685,7 +711,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                                     ))
                                   ) : (
                                     <tr>
-                                      <td colSpan="6" className="bg-blue-50 border-b border-gray-100">
+                                      <td colSpan="8" className="bg-blue-50 border-b border-gray-100">
                                         <div className="text-center py-4 pl-20 text-sm text-gray-500">
                                           No lessons found for this module
                                         </div>
@@ -698,7 +724,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="6" className="bg-gray-50 border-b border-gray-200">
+                            <td colSpan="8" className="bg-gray-50 border-b border-gray-200">
                               <div className="text-center py-4 pl-12 text-sm text-gray-500">
                                 No modules found for this course
                               </div>
