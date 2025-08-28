@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react'
 import { apiClient } from '../lib/api'
+import ImageUpload from './ImageUpload'
+import useStorage from '../hooks/useStorage'
 
 const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
   const [formData, setFormData] = useState({
     course_id: '',
     title: '',
     description: '',
+    module_images: [],
     order: 0,
-    is_locked: false,
-    drip_content: false
+    is_locked: false
   })
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(false)
   const [coursesLoading, setCoursesLoading] = useState(false)
   const [error, setError] = useState('')
+  const [coverImageUrl, setCoverImageUrl] = useState('')
+  const [imageUploadError, setImageUploadError] = useState('')
+  const storage = useStorage()
 
   const isEditing = !!module && !!module.id // Only editing if module has an id
 
@@ -29,19 +34,21 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
         course_id: module.course_id || '',
         title: module.title || '',
         description: module.description || '',
+        module_images: module.module_images || [],
         order: module.order || 0,
-        is_locked: module.is_locked || false,
-        drip_content: module.drip_content || false
+        is_locked: module.is_locked || false
       })
+      setCoverImageUrl(module.module_images?.[0] || '')
     } else {
       setFormData({
         course_id: '',
         title: '',
         description: '',
+        module_images: [],
         order: 0,
-        is_locked: false,
-        drip_content: false
+        is_locked: false
       })
+      setCoverImageUrl('')
     }
     setError('')
   }, [module, isOpen])
@@ -57,6 +64,15 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
     } finally {
       setCoursesLoading(false)
     }
+  }
+
+  const handleImageChange = (url, error) => {
+    setCoverImageUrl(url)
+    setImageUploadError(error)
+    setFormData(prev => ({
+      ...prev,
+      module_images: url ? [url] : []
+    }))
   }
 
   const handleSubmit = async (e) => {
@@ -215,22 +231,26 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
                   Lock this module (students cannot access)
                 </label>
               </div>
-              
-              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                <input
-                  type="checkbox"
-                  id="drip_content"
-                  checked={formData.drip_content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, drip_content: e.target.checked }))}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <label htmlFor="drip_content" className="text-sm font-medium text-gray-900">
-                  🔒 Drip Content
-                </label>
-                <div className="text-xs text-gray-600">
-                  Enable drip content for this module
-                </div>
-              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Module Cover Image
+              </label>
+              <ImageUpload
+                value={coverImageUrl}
+                onChange={handleImageChange}
+                error={imageUploadError}
+                storage={storage}
+                disabled={loading || coursesLoading}
+                aspectRatio="3/2"
+                uploadFunction="uploadModuleImage"
+              />
+              {imageUploadError && (
+                <p className="mt-1 text-sm text-red-600">
+                  {imageUploadError}
+                </p>
+              )}
             </div>
           </div>
 

@@ -19,6 +19,7 @@ router.get('/',
           course_id,
           title,
           description,
+          module_images,
           order,
           is_locked,
           courses (
@@ -82,6 +83,7 @@ router.get('/:id',
           course_id,
           title,
           description,
+          module_images,
           order,
           is_locked,
           courses (
@@ -125,6 +127,15 @@ router.post('/',
   async (req, res) => {
     try {
       const moduleData = req.body;
+      console.log('📥 Backend received module data:', JSON.stringify(moduleData, null, 2));
+
+      // Remove drip_content if it exists (not in database schema)
+      if ('drip_content' in moduleData) {
+        delete moduleData.drip_content;
+        console.log('🔧 Removed drip_content field');
+      }
+
+      console.log('📤 Data to insert in database:', JSON.stringify(moduleData, null, 2));
 
       // Verify that the course exists
       const { data: course, error: courseError } = await supabase
@@ -157,6 +168,7 @@ router.post('/',
           course_id,
           title,
           description,
+          module_images,
           order,
           is_locked,
           courses (
@@ -175,6 +187,7 @@ router.post('/',
         });
       }
 
+      console.log('✅ Module created successfully:', JSON.stringify(data, null, 2));
       res.status(201).json(data);
     } catch (error) {
       console.error('Server error:', error);
@@ -194,6 +207,15 @@ router.put('/:id',
     try {
       const { id } = req.params;
       const updateData = req.body;
+      console.log('📥 Backend received update data for module', id, ':', JSON.stringify(updateData, null, 2));
+
+      // Remove drip_content if it exists (not in database schema)
+      if ('drip_content' in updateData) {
+        delete updateData.drip_content;
+        console.log('🔧 Removed drip_content field from update');
+      }
+
+      console.log('📤 Data to update in database:', JSON.stringify(updateData, null, 2));
 
       // If updating course_id, verify the new course exists
       if (updateData.course_id) {
@@ -231,6 +253,7 @@ router.put('/:id',
           course_id,
           title,
           description,
+          module_images,
           order,
           is_locked,
           courses (

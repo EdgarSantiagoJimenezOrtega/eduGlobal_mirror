@@ -33,6 +33,7 @@ const moduleSchema = {
     course_id: Joi.number().integer().positive().required(),
     title: Joi.string().required().min(1).max(255).trim(),
     description: Joi.string().allow('').max(2000).trim(),
+    module_images: Joi.array().items(Joi.string().uri()).default([]),
     order: Joi.number().integer().min(0).default(0),
     is_locked: Joi.boolean().default(false)
   }),
@@ -41,6 +42,7 @@ const moduleSchema = {
     course_id: Joi.number().integer().positive(),
     title: Joi.string().min(1).max(255).trim(),
     description: Joi.string().allow('').max(2000).trim(),
+    module_images: Joi.array().items(Joi.string().uri()),
     order: Joi.number().integer().min(0),
     is_locked: Joi.boolean()
   }).min(1)

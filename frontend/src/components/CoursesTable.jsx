@@ -154,9 +154,21 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   }
 
   // Module handlers
-  const handleEditModule = (module) => {
-    setModuleToEdit(module)
-    setModuleModalOpen(true)
+  const handleEditModule = async (module) => {
+    // Fetch fresh module data to ensure we have the latest module_images
+    try {
+      const freshModule = await apiClient.getModule(module.id)
+      setModuleToEdit(freshModule)
+      // Add a small delay to ensure state is set before opening modal
+      setTimeout(() => {
+        setModuleModalOpen(true)
+      }, 0)
+    } catch (error) {
+      console.error('Error fetching module details:', error)
+      // Fallback to using the existing module data
+      setModuleToEdit(module)
+      setModuleModalOpen(true)
+    }
   }
 
   const handleDeleteModule = (module) => {
@@ -586,6 +598,18 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                                 <td className="table-cell">
                                   <div className="flex items-center">
                                     <span className="text-lg mr-2">📖</span>
+                                    {module.module_images?.[0] && (
+                                      <div className="w-12 h-8 rounded overflow-hidden mr-3 flex-shrink-0">
+                                        <img 
+                                          src={module.module_images[0]} 
+                                          alt={`${module.title} cover`}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.target.style.display = 'none'
+                                          }}
+                                        />
+                                      </div>
+                                    )}
                                     <div>
                                       <div className="text-sm font-medium text-gray-900">
                                         {module.title}
