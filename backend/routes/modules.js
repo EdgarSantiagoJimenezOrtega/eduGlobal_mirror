@@ -453,6 +453,7 @@ router.get('/:id/lessons',
 // GET /api/modules/batch/without-image - Get modules without images
 router.get('/batch/without-image', async (req, res) => {
   try {
+    // Get ALL modules first
     const { data, error } = await supabase
       .from('modules')
       .select(`
@@ -469,22 +470,33 @@ router.get('/batch/without-image', async (req, res) => {
           slug
         )
       `)
-      .or('module_images.is.null,module_images.eq.{}')
 
     if (error) {
       console.error('Database error:', error);
       return res.status(500).json({
         error: 'Database Error',
-        message: 'Failed to fetch modules without images'
+        message: 'Failed to fetch modules'
       });
     }
 
-    // Filter modules that actually have no images (empty array or null)
-    const modulesWithoutImages = (data || []).filter(module =>
-      !module.module_images ||
-      module.module_images.length === 0 ||
-      (Array.isArray(module.module_images) && module.module_images.every(img => !img))
-    )
+    // Filter modules that actually have no images
+    const modulesWithoutImages = (data || []).filter(module => {
+      // Check if module_images is null, undefined, empty array, or array with empty strings
+      const hasNoImage = !module.module_images ||
+        module.module_images === null ||
+        (Array.isArray(module.module_images) && (
+          module.module_images.length === 0 ||
+          module.module_images.every(img => !img || img === '')
+        ))
+
+      if (hasNoImage) {
+        console.log(`Module without image found: ${module.title} (ID: ${module.id}), module_images:`, module.module_images)
+      }
+
+      return hasNoImage
+    })
+
+    console.log(`✅ Found ${modulesWithoutImages.length} modules without images out of ${data?.length || 0} total modules`)
 
     res.status(200).json({
       data: modulesWithoutImages,

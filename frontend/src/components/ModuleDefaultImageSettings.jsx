@@ -27,10 +27,13 @@ const ModuleDefaultImageSettings = () => {
 
   const fetchModulesWithoutImage = async () => {
     try {
+      console.log('🔍 Fetching modules without images...')
       const response = await apiClient.getModulesWithoutImage()
+      console.log('📊 Response from server:', response)
+      console.log('📦 Modules without image found:', response.data?.length || 0)
       setModulesWithoutImage(response.data || [])
     } catch (err) {
-      console.error('Error fetching modules without image:', err)
+      console.error('❌ Error fetching modules without image:', err)
     }
   }
 
