@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { uploadImage, validateImageFile, createPreviewUrl, validateImageUrl } from '../lib/storage'
+import { uploadImage, uploadCourseImage, uploadModuleImage, validateImageFile, createPreviewUrl, validateImageUrl } from '../lib/storage'
 
-const ImageUpload = ({ value, onChange, error, disabled = false }) => {
+const ImageUpload = ({ value, onChange, error, disabled = false, uploadFunction = 'uploadImage' }) => {
   const [uploadMode, setUploadMode] = useState('url') // 'url' or 'file'
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -18,6 +18,9 @@ const ImageUpload = ({ value, onChange, error, disabled = false }) => {
     if (value) {
       setPreviewUrl(value)
       setUrlInput(value)
+    } else {
+      setPreviewUrl('')
+      setUrlInput('')
     }
   }, [value])
 
@@ -46,7 +49,15 @@ const ImageUpload = ({ value, onChange, error, disabled = false }) => {
         setUploadProgress(prev => Math.min(prev + 10, 90))
       }, 200)
 
-      const result = await uploadImage(file)
+      // Get the appropriate upload function
+      const uploadFunctionMap = {
+        uploadImage,
+        uploadCourseImage,
+        uploadModuleImage
+      }
+      const uploadFunc = uploadFunctionMap[uploadFunction] || uploadImage
+      
+      const result = await uploadFunc(file)
       
       clearInterval(progressInterval)
       setUploadProgress(100)

@@ -18,6 +18,7 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
   const [error, setError] = useState('')
   const [coverImageUrl, setCoverImageUrl] = useState('')
   const [imageUploadError, setImageUploadError] = useState('')
+  const [useDefaultImage, setUseDefaultImage] = useState(false)
   const storage = useStorage()
 
   const isEditing = !!module && !!module.id // Only editing if module has an id
@@ -77,7 +78,7 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     try {
       setLoading(true)
       setError('')
@@ -90,8 +91,19 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
         throw new Error('Course selection is required')
       }
 
+      // If no image is selected and not editing, use the default image
+      let finalImageArray = formData.module_images
+      if (!coverImageUrl && !isEditing) {
+        const defaultImage = localStorage.getItem('module-default-image')
+        if (defaultImage) {
+          finalImageArray = [defaultImage]
+          setUseDefaultImage(true)
+        }
+      }
+
       const dataToSubmit = {
         ...formData,
+        module_images: finalImageArray,
         course_id: parseInt(formData.course_id),
         order: parseInt(formData.order) || 0
       }
@@ -236,6 +248,11 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Module Cover Image
+                {!coverImageUrl && localStorage.getItem('module-default-image') && (
+                  <span className="text-xs text-gray-500 ml-2">
+                    (Will use default image if not specified)
+                  </span>
+                )}
               </label>
               <ImageUpload
                 value={coverImageUrl}

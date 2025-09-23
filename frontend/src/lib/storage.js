@@ -98,19 +98,20 @@ export const validateImageFile = (file) => {
 /**
  * Generate unique file name
  */
-const generateFileName = (originalName) => {
+const generateFileName = (originalName, subfolder = '') => {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 8)
   const extension = originalName.split('.').pop().toLowerCase()
   const date = new Date().toISOString().slice(0, 7) // YYYY-MM format
   
-  return `images/${date}/${timestamp}-${random}.${extension}`
+  const folder = subfolder ? `${subfolder}/` : ''
+  return `images/${date}/${folder}${timestamp}-${random}.${extension}`
 }
 
 /**
  * Upload image to Supabase Storage
  */
-export const uploadImage = async (file, onProgress = null) => {
+export const uploadImage = async (file, onProgress = null, subfolder = '') => {
   try {
     // Validate file
     const validation = validateImageFile(file)
@@ -134,7 +135,7 @@ export const uploadImage = async (file, onProgress = null) => {
     }
 
     // Generate unique file name
-    const fileName = generateFileName(file.name)
+    const fileName = generateFileName(file.name, subfolder)
     console.log(`📁 Uploading to: ${fileName}`)
 
     // Upload to Supabase Storage
@@ -259,4 +260,18 @@ export const validateImageUrl = async (url) => {
 
     img.src = url
   })
+}
+
+/**
+ * Upload course cover image
+ */
+export const uploadCourseImage = async (file, onProgress = null) => {
+  return uploadImage(file, onProgress, 'courses')
+}
+
+/**
+ * Upload module cover image  
+ */
+export const uploadModuleImage = async (file, onProgress = null) => {
+  return uploadImage(file, onProgress, 'modules')
 }

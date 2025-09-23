@@ -598,10 +598,10 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                                 <td className="table-cell">
                                   <div className="flex items-center">
                                     <span className="text-lg mr-2">📖</span>
-                                    {module.module_images?.[0] && (
+                                    {(module.module_images?.[0] || localStorage.getItem('module-default-image')) && (
                                       <div className="w-12 h-8 rounded overflow-hidden mr-3 flex-shrink-0">
-                                        <img 
-                                          src={module.module_images[0]} 
+                                        <img
+                                          src={module.module_images?.[0] || localStorage.getItem('module-default-image')}
                                           alt={`${module.title} cover`}
                                           className="w-full h-full object-cover"
                                           onError={(e) => {

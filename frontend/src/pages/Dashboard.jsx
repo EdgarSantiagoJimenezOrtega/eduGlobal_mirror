@@ -4,6 +4,7 @@ import CoursesTable from '../components/CoursesTable'
 import CourseModal from '../components/CourseModal'
 import ModuleModal from '../components/ModuleModal'
 import LessonModal from '../components/LessonModal'
+import ModuleDefaultImageSettings from '../components/ModuleDefaultImageSettings'
 import { apiClient } from '../lib/api'
 
 const Dashboard = () => {
@@ -194,6 +195,9 @@ const Dashboard = () => {
           </div>
 
         </div>
+
+        {/* Module Default Image Settings */}
+        <ModuleDefaultImageSettings />
 
         {/* Error message */}
         {statsError && (
