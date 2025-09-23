@@ -91,15 +91,8 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
         throw new Error('Course selection is required')
       }
 
-      // If no image is selected and not editing, use the default image
+      // Use the current images or empty array if creating new module without image
       let finalImageArray = formData.module_images
-      if (!coverImageUrl && !isEditing) {
-        const defaultImage = localStorage.getItem('module-default-image')
-        if (defaultImage) {
-          finalImageArray = [defaultImage]
-          setUseDefaultImage(true)
-        }
-      }
 
       const dataToSubmit = {
         ...formData,
@@ -248,9 +241,9 @@ const ModuleModal = ({ isOpen, onClose, module, onSuccess }) => {
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Module Cover Image
-                {!coverImageUrl && localStorage.getItem('module-default-image') && (
+                {!coverImageUrl && !isEditing && (
                   <span className="text-xs text-gray-500 ml-2">
-                    (Will use default image if not specified)
+                    (Default image will be applied if available and no image is selected)
                   </span>
                 )}
               </label>

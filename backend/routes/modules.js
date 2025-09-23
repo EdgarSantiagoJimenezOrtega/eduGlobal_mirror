@@ -376,10 +376,11 @@ router.delete('/:id',
   }
 );
 
+
 // GET /api/modules/:id/lessons - Get all lessons for a module
-router.get('/:id/lessons', 
+router.get('/:id/lessons',
   validateParams(Joi.object({ id: paramValidation.id })),
-  validateQuery(Joi.object(queryValidation)), 
+  validateQuery(Joi.object(queryValidation)),
   async (req, res) => {
     try {
       const { id } = req.params;
@@ -438,6 +439,108 @@ router.get('/:id/lessons',
           offset,
           has_more: count > offset + limit
         }
+      });
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
+// GET /api/modules/batch/without-image - Get modules without images
+router.get('/batch/without-image', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('modules')
+      .select(`
+        id,
+        course_id,
+        title,
+        description,
+        module_images,
+        order,
+        is_locked,
+        courses (
+          id,
+          title,
+          slug
+        )
+      `)
+      .or('module_images.is.null,module_images.eq.{}')
+
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({
+        error: 'Database Error',
+        message: 'Failed to fetch modules without images'
+      });
+    }
+
+    // Filter modules that actually have no images (empty array or null)
+    const modulesWithoutImages = (data || []).filter(module =>
+      !module.module_images ||
+      module.module_images.length === 0 ||
+      (Array.isArray(module.module_images) && module.module_images.every(img => !img))
+    )
+
+    res.status(200).json({
+      data: modulesWithoutImages,
+      count: modulesWithoutImages.length
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'An unexpected error occurred'
+    });
+  }
+});
+
+// PUT /api/modules/batch/bulk-update-images - Update multiple modules with default image
+router.put('/batch/bulk-update-images',
+  validateBody(Joi.object({
+    module_ids: Joi.array().items(Joi.number().integer().positive()).required(),
+    default_image_url: Joi.string().uri().required()
+  })),
+  async (req, res) => {
+    try {
+      const { module_ids, default_image_url } = req.body;
+      console.log(`🔄 Bulk updating ${module_ids.length} modules with default image`);
+
+      const { data, error } = await supabase
+        .from('modules')
+        .update({ module_images: [default_image_url] })
+        .in('id', module_ids)
+        .select(`
+          id,
+          course_id,
+          title,
+          description,
+          module_images,
+          order,
+          is_locked,
+          courses (
+            id,
+            title,
+            slug
+          )
+        `);
+
+      if (error) {
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to update modules'
+        });
+      }
+
+      console.log(`✅ Successfully updated ${data.length} modules`);
+      res.status(200).json({
+        data,
+        updated_count: data.length
       });
     } catch (error) {
       console.error('Server error:', error);

@@ -151,6 +151,20 @@ class ApiClient {
     })
   }
 
+  async getModulesWithoutImage() {
+    return this.request('/modules/batch/without-image')
+  }
+
+  async bulkUpdateModuleImages(moduleIds, defaultImageUrl) {
+    return this.request('/modules/batch/bulk-update-images', {
+      method: 'PUT',
+      body: {
+        module_ids: moduleIds,
+        default_image_url: defaultImageUrl
+      }
+    })
+  }
+
   // Lessons endpoints
   async getLessons(params = {}) {
     const searchParams = new URLSearchParams()
