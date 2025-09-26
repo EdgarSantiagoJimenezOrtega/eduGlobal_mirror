@@ -377,6 +377,84 @@ router.delete('/:id',
 );
 
 
+// GET /api/modules/course/:courseId - Get all modules for a course
+router.get('/course/:courseId',
+  validateParams(Joi.object({ courseId: paramValidation.id })),
+  validateQuery(Joi.object({
+    limit: Joi.number().integer().min(1).max(1000).default(1000),
+    offset: Joi.number().integer().min(0).default(0),
+    order_by: Joi.string().valid('id', 'title', 'order').default('order'),
+    order_direction: Joi.string().valid('asc', 'desc').default('asc')
+  })),
+  async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const { limit, offset, order_by, order_direction } = req.query;
+
+      // First check if course exists
+      const { data: course, error: courseError } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('id', courseId)
+        .single();
+
+      if (courseError) {
+        if (courseError.code === 'PGRST116') {
+          return res.status(404).json({
+            error: 'Not Found',
+            message: `Course with id ${courseId} not found`
+          });
+        }
+
+        console.error('Database error:', courseError);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to verify course existence'
+        });
+      }
+
+      const { data, error, count } = await supabase
+        .from('modules')
+        .select(`
+          id,
+          course_id,
+          title,
+          description,
+          module_images,
+          order,
+          is_locked
+        `)
+        .eq('course_id', courseId)
+        .order(order_by === 'title' ? 'title' : 'order', { ascending: order_direction === 'asc' })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to fetch modules'
+        });
+      }
+
+      res.status(200).json({
+        data,
+        pagination: {
+          total: count,
+          limit,
+          offset,
+          has_more: count > offset + limit
+        }
+      });
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
 // GET /api/modules/:id/lessons - Get all lessons for a module
 router.get('/:id/lessons',
   validateParams(Joi.object({ id: paramValidation.id })),

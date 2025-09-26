@@ -5,6 +5,7 @@ import ModuleModal from './ModuleModal'
 import DeleteModuleModal from './DeleteModuleModal'
 import LessonModal from './LessonModal'
 import DeleteLessonModal from './DeleteLessonModal'
+import CourseModuleImageManager from './CourseModuleImageManager'
 
 const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [courses, setCourses] = useState([])
@@ -29,6 +30,10 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [lessonToEdit, setLessonToEdit] = useState(null)
   const [deleteLessonModalOpen, setDeleteLessonModalOpen] = useState(false)
   const [lessonToDelete, setLessonToDelete] = useState(null)
+
+  // Course Module Image Manager states
+  const [courseImageManagerOpen, setCourseImageManagerOpen] = useState(false)
+  const [courseForImageManager, setCourseForImageManager] = useState(null)
   
   // Expandable table state with session persistence
   const [expandedCourses, setExpandedCourses] = useState(() => {
@@ -228,18 +233,31 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const handleLessonSuccess = async () => {
     // Refresh the courses data
     await fetchCourses()
-    
+
     // Reload modules for expanded courses
     const expandedCourseIds = Array.from(expandedCourses)
     for (const courseId of expandedCourseIds) {
       await loadModulesForCourse(courseId)
     }
-    
+
     // Reload lessons for expanded modules
     const expandedModuleIds = Array.from(expandedModules)
     for (const moduleId of expandedModuleIds) {
       await loadLessonsForModule(moduleId)
     }
+  }
+
+  // Course Module Image Manager handlers
+  const openImageManager = (course) => {
+    setCourseForImageManager(course)
+    setCourseImageManagerOpen(true)
+  }
+
+  const handleImageManagerClose = () => {
+    setCourseImageManagerOpen(false)
+    setCourseForImageManager(null)
+    // Refresh courses to show updated modules
+    setRefreshKey(prev => prev + 1)
   }
 
   // Expandable functionality
@@ -540,18 +558,29 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                               <div className="flex items-center">
                                 <span className="text-sm font-medium text-gray-700 mr-3">📖 Modules for "{course.title}"</span>
                               </div>
-                              <button
-                                onClick={() => {
-                                  setModuleToEdit({ course_id: course.id, course_title: course.title })
-                                  setModuleModalOpen(true)
-                                }}
-                                className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors duration-150"
-                              >
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                Add Module
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => openImageManager(course)}
+                                  className="inline-flex items-center px-3 py-1 text-xs font-medium text-purple-700 bg-purple-100 hover:bg-purple-200 rounded-full transition-colors duration-150"
+                                >
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  🖼️ Manage Images
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setModuleToEdit({ course_id: course.id, course_title: course.title })
+                                    setModuleModalOpen(true)
+                                  }}
+                                  className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors duration-150"
+                                >
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                  </svg>
+                                  Add Module
+                                </button>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -891,6 +920,13 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
         onClose={handleDeleteLessonModalClose}
         lesson={lessonToDelete}
         onSuccess={handleLessonSuccess}
+      />
+
+      {/* Course Module Image Manager */}
+      <CourseModuleImageManager
+        isOpen={courseImageManagerOpen}
+        onClose={handleImageManagerClose}
+        course={courseForImageManager}
       />
     </div>
   )

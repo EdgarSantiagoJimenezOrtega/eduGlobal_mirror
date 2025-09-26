@@ -165,6 +165,17 @@ class ApiClient {
     })
   }
 
+  async getCourseModules(courseId, params = {}) {
+    const queryParams = new URLSearchParams({
+      limit: 1000, // Get all modules for the course
+      offset: 0,
+      order_by: 'order',
+      order_direction: 'asc',
+      ...params
+    })
+    return this.request(`/modules/course/${courseId}?${queryParams}`)
+  }
+
   // Lessons endpoints
   async getLessons(params = {}) {
     const searchParams = new URLSearchParams()
