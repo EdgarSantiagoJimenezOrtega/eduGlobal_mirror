@@ -136,6 +136,7 @@ const queryValidation = {
   offset: Joi.number().integer().min(0).default(0),
   order_by: Joi.string().valid('id', 'title', 'order', 'name').default('order'),
   order_direction: Joi.string().valid('asc', 'desc').default('asc'),
+  search: Joi.string().max(255).trim(),
   course_id: Joi.number().integer().positive(),
   module_id: Joi.number().integer().positive(),
   category_id: Joi.number().integer().positive(),

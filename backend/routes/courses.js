@@ -6,12 +6,12 @@ const { validateBody, validateParams, validateQuery } = require('../middleware/v
 const Joi = require('joi');
 
 // GET /api/courses - List all courses with optional filtering
-router.get('/', 
-  validateQuery(Joi.object(queryValidation)), 
+router.get('/',
+  validateQuery(Joi.object(queryValidation)),
   async (req, res) => {
     try {
-      const { limit, offset, order_by, order_direction, is_locked } = req.query;
-      
+      const { limit, offset, order_by, order_direction, is_locked, search } = req.query;
+
       let query = supabase
         .from('courses')
         .select(`
@@ -33,6 +33,11 @@ router.get('/',
         `, { count: 'exact' })
         .order(order_by, { ascending: order_direction === 'asc' })
         .range(offset, offset + limit - 1);
+
+      // Apply search filter
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,slug.ilike.%${search}%,description.ilike.%${search}%`);
+      }
 
       // Apply filters if provided
       if (typeof is_locked === 'boolean') {

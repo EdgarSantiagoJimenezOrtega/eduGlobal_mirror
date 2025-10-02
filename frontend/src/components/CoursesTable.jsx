@@ -56,19 +56,23 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [moduleLessons, setModuleLessons] = useState({})
   const [loadingModules, setLoadingModules] = useState(new Set())
   const [loadingLessons, setLoadingLessons] = useState(new Set())
-  
-  const itemsPerPage = 10
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   const fetchCourses = async () => {
     try {
       setLoading(true)
       setError('')
-      
+
       const params = {
         limit: itemsPerPage,
         offset: (currentPage - 1) * itemsPerPage,
         order_by: 'order',
         order_direction: 'asc'
+      }
+
+      // Add search filter if present
+      if (searchTerm) {
+        params.search = searchTerm
       }
 
       // Add category filter if selected
@@ -105,16 +109,29 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
     fetchCategories()
   }, [])
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1)
+      } else {
+        fetchCourses()
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
   useEffect(() => {
     fetchCourses()
-  }, [currentPage, refreshTrigger, selectedCategoryId])
+  }, [currentPage, refreshTrigger, selectedCategoryId, itemsPerPage])
 
-  // Reset to page 1 when category filter changes
+  // Reset to page 1 when category filter or itemsPerPage changes
   useEffect(() => {
     if (currentPage !== 1) {
       setCurrentPage(1)
     }
-  }, [selectedCategoryId])
+  }, [selectedCategoryId, itemsPerPage])
 
   // Persist expanded states to localStorage
   useEffect(() => {
@@ -354,12 +371,6 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
     }
   }
 
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
   const totalPages = Math.ceil(totalCount / itemsPerPage)
 
   return (
@@ -454,14 +465,14 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                     </div>
                   </td>
                 </tr>
-              ) : filteredCourses.length === 0 ? (
+              ) : courses.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="table-cell text-center py-8 text-gray-500">
                     {searchTerm ? 'No courses found matching your search.' : 'No courses found. Create your first course!'}
                   </td>
                 </tr>
               ) : (
-                filteredCourses.map((course) => (
+                courses.map((course) => (
                   <React.Fragment key={course.id}>
                     {/* Course Row */}
                     <tr className="hover:bg-gray-50 border-b border-gray-200">
@@ -813,7 +824,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 0 && (
         <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6">
           <div className="flex flex-1 justify-between sm:hidden">
             <button
@@ -832,7 +843,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
             </button>
           </div>
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
+            <div className="flex items-center gap-4">
               <p className="text-sm text-gray-700">
                 Showing{' '}
                 <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, totalCount)}</span>{' '}
@@ -842,6 +853,22 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                 <span className="font-medium">{totalCount}</span>{' '}
                 results
               </p>
+              <div className="flex items-center gap-2">
+                <label htmlFor="items-per-page" className="text-sm text-gray-700">
+                  Show:
+                </label>
+                <select
+                  id="items-per-page"
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="input-field py-1 pr-8 text-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+              </div>
             </div>
             <div>
               <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
@@ -855,7 +882,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                     <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                   </svg>
                 </button>
-                
+
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
@@ -869,7 +896,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                     {page}
                   </button>
                 ))}
-                
+
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
