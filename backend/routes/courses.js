@@ -10,7 +10,7 @@ router.get('/',
   validateQuery(Joi.object(queryValidation)),
   async (req, res) => {
     try {
-      const { limit, offset, order_by, order_direction, is_locked, search } = req.query;
+      const { limit, offset, order_by, order_direction, is_locked, search, language } = req.query;
 
       let query = supabase
         .from('courses')
@@ -46,6 +46,10 @@ router.get('/',
 
       if (req.query.category_id) {
         query = query.eq('category_id', req.query.category_id);
+      }
+
+      if (language) {
+        query = query.eq('language', language);
       }
 
       const { data, error, count } = await query;

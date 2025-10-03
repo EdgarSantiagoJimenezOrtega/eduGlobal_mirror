@@ -13,6 +13,7 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [selectedLanguage, setSelectedLanguage] = useState('')
   const [categories, setCategories] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
@@ -80,6 +81,11 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
         params.category_id = selectedCategoryId
       }
 
+      // Add language filter if selected
+      if (selectedLanguage) {
+        params.language = selectedLanguage
+      }
+
       const response = await apiClient.getCourses(params)
       setCourses(response.data || [])
       setTotalCount(response.pagination?.total || 0)
@@ -124,14 +130,14 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
 
   useEffect(() => {
     fetchCourses()
-  }, [currentPage, refreshTrigger, selectedCategoryId, itemsPerPage])
+  }, [currentPage, refreshTrigger, selectedCategoryId, selectedLanguage, itemsPerPage])
 
-  // Reset to page 1 when category filter or itemsPerPage changes
+  // Reset to page 1 when category filter, language filter or itemsPerPage changes
   useEffect(() => {
     if (currentPage !== 1) {
       setCurrentPage(1)
     }
-  }, [selectedCategoryId, itemsPerPage])
+  }, [selectedCategoryId, selectedLanguage, itemsPerPage])
 
   // Persist expanded states to localStorage
   useEffect(() => {
@@ -419,6 +425,28 @@ const CoursesTable = ({ onEdit, refreshTrigger }) => {
                     {category.name}
                   </option>
                 ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="relative">
+              <select
+                className="input-field appearance-none pr-10 w-32"
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+              >
+                <option value="">All Languages</option>
+                <option value="English">English</option>
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+                <option value="Portuguese">Portuguese</option>
+                <option value="Italian">Italian</option>
+                <option value="Dutch">Dutch</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

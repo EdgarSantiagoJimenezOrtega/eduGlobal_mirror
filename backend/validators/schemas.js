@@ -140,6 +140,7 @@ const queryValidation = {
   course_id: Joi.number().integer().positive(),
   module_id: Joi.number().integer().positive(),
   category_id: Joi.number().integer().positive(),
+  language: Joi.string().max(50).trim(),
   user_id: Joi.string().uuid(),
   item_type: Joi.string().valid('course', 'module', 'lesson'),
   is_completed: Joi.boolean(),
