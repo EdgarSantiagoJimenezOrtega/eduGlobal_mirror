@@ -6,6 +6,18 @@
   body {
     @apply font-sans antialiased bg-gray-50;
   }
+
+  /* Modo oscuro mediante inversión de colores */
+  html.dark-mode {
+    filter: invert(1) hue-rotate(180deg);
+    background-color: #000;
+  }
+
+  html.dark-mode img,
+  html.dark-mode video,
+  html.dark-mode [style*="background-image"] {
+    filter: invert(1) hue-rotate(180deg);
+  }
 }
 
 @layer components {
