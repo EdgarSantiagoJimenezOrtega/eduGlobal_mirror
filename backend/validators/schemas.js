@@ -112,7 +112,7 @@ const categorySchema = {
     order: Joi.number().integer().min(0).default(0),
     is_active: Joi.boolean().default(true)
   }),
-  
+
   update: Joi.object({
     name: Joi.string().min(1).max(255).trim(),
     slug: Joi.string().min(1).max(255).trim().pattern(/^[a-z0-9-]+$/),
@@ -120,6 +120,37 @@ const categorySchema = {
     color: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/),
     icon: Joi.string().allow('').max(100).trim(),
     order: Joi.number().integer().min(0),
+    is_active: Joi.boolean()
+  }).min(1)
+};
+
+// Region validation schemas
+const regionSchema = {
+  create: Joi.object({
+    name: Joi.string().required().min(1).max(255).trim(),
+    slug: Joi.string().required().min(1).max(255).trim().pattern(/^[a-z0-9-]+$/),
+    description: Joi.string().allow('').max(1000).trim(),
+    included_category_ids: Joi.array().items(Joi.number().integer().positive()).min(1).required()
+      .messages({
+        'array.min': 'At least one category must be included'
+      }),
+    excluded_course_ids: Joi.array().items(Joi.number().integer().positive()).default([]),
+    available_languages: Joi.array().items(Joi.string().max(10).trim()).min(1).required()
+      .messages({
+        'array.min': 'At least one language must be available'
+      }),
+    preferred_ui_language: Joi.string().max(10).trim().required(),
+    is_active: Joi.boolean().default(true)
+  }),
+
+  update: Joi.object({
+    name: Joi.string().min(1).max(255).trim(),
+    slug: Joi.string().min(1).max(255).trim().pattern(/^[a-z0-9-]+$/),
+    description: Joi.string().allow('').max(1000).trim(),
+    included_category_ids: Joi.array().items(Joi.number().integer().positive()).min(1),
+    excluded_course_ids: Joi.array().items(Joi.number().integer().positive()),
+    available_languages: Joi.array().items(Joi.string().max(10).trim()).min(1),
+    preferred_ui_language: Joi.string().max(10).trim(),
     is_active: Joi.boolean()
   }).min(1)
 };
@@ -155,6 +186,7 @@ module.exports = {
   userProgressSchema,
   favoriteSchema,
   categorySchema,
+  regionSchema,
   paramValidation,
   queryValidation
 };

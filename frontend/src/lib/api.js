@@ -251,6 +251,43 @@ class ApiClient {
     })
   }
 
+  // Regions endpoints
+  async getRegions(params = {}) {
+    const searchParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        searchParams.append(key, params[key])
+      }
+    })
+
+    const queryString = searchParams.toString()
+    return this.request(`/regions${queryString ? `?${queryString}` : ''}`)
+  }
+
+  async getRegion(id) {
+    return this.request(`/regions/${id}`)
+  }
+
+  async createRegion(regionData) {
+    return this.request('/regions', {
+      method: 'POST',
+      body: regionData,
+    })
+  }
+
+  async updateRegion(id, regionData) {
+    return this.request(`/regions/${id}`, {
+      method: 'PUT',
+      body: regionData,
+    })
+  }
+
+  async deleteRegion(id) {
+    return this.request(`/regions/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
   // Dashboard statistics endpoints
   async getDashboardStats() {
     try {

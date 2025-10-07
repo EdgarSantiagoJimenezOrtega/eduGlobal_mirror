@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Categories from './pages/Categories'
+import Regions from './pages/Regions'
 
 function App() {
   return (
@@ -29,6 +30,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Categories />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/regions"
+                element={
+                  <ProtectedRoute>
+                    <Regions />
                   </ProtectedRoute>
                 }
               />

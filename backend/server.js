@@ -14,6 +14,7 @@ const lessonsRoutes = require('./routes/lessons');
 const userProgressRoutes = require('./routes/user_progress');
 const favoritesRoutes = require('./routes/favorites');
 const categoriesRoutes = require('./routes/categories');
+const regionsRoutes = require('./routes/regions');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -64,6 +65,7 @@ app.use('/api/lessons', lessonsRoutes);
 app.use('/api/user_progress', userProgressRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/regions', regionsRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -73,10 +75,12 @@ app.use('*', (req, res) => {
     availableRoutes: [
       'GET /health',
       'GET /api/courses',
-      'GET /api/modules', 
+      'GET /api/modules',
       'GET /api/lessons',
       'GET /api/user_progress',
-      'GET /api/favorites'
+      'GET /api/favorites',
+      'GET /api/categories',
+      'GET /api/regions'
     ]
   });
 });
@@ -104,6 +108,7 @@ app.listen(PORT, async () => {
   console.log(`   GET/POST/PUT/DELETE /api/user_progress`);
   console.log(`   GET/POST/PUT/DELETE /api/favorites`);
   console.log(`   GET/POST/PUT/DELETE /api/categories`);
+  console.log(`   GET/POST/PUT/DELETE /api/regions`);
   console.log('');
   
   // Test database connection on startup
