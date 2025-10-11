@@ -466,4 +466,96 @@ router.get('/:id/modules',
   }
 );
 
+// GET /api/courses/batch/without-image - Get courses without images
+router.get('/batch/without-image', async (req, res) => {
+  try {
+    // Get ALL courses first
+    const { data, error } = await supabase
+      .from('courses')
+      .select(`
+        id,
+        title,
+        slug,
+        cover_images,
+        category_id,
+        categories (
+          id,
+          name
+        )
+      `)
+      .order('title', { ascending: true });
+
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({
+        error: 'Database Error',
+        message: 'Failed to fetch courses'
+      });
+    }
+
+    // Filter courses without images in JavaScript
+    const coursesWithoutImage = (data || []).filter(course => {
+      const hasNoImages = !course.cover_images || course.cover_images.length === 0;
+      return hasNoImages;
+    });
+
+    console.log(`📊 Found ${coursesWithoutImage.length} courses without images out of ${data.length} total`);
+
+    res.status(200).json({
+      data: coursesWithoutImage,
+      total: coursesWithoutImage.length
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'An unexpected error occurred'
+    });
+  }
+});
+
+// PUT /api/courses/batch/bulk-update-images - Update multiple courses with default image
+router.put('/batch/bulk-update-images',
+  validateBody(Joi.object({
+    course_ids: Joi.array().items(Joi.number().integer().positive()).required(),
+    default_image_url: Joi.string().uri().required()
+  })),
+  async (req, res) => {
+    try {
+      const { course_ids, default_image_url } = req.body;
+      console.log(`🔄 Bulk updating ${course_ids.length} courses with default image`);
+
+      const { data, error } = await supabase
+        .from('courses')
+        .update({ cover_images: [default_image_url] })
+        .in('id', course_ids)
+        .select(`
+          id,
+          title,
+          cover_images
+        `);
+
+      if (error) {
+        console.error('Database error:', error);
+        return res.status(500).json({
+          error: 'Database Error',
+          message: 'Failed to update courses'
+        });
+      }
+
+      console.log(`✅ Successfully updated ${data.length} courses`);
+      res.status(200).json({
+        data,
+        message: `Successfully updated ${data.length} courses with default image`
+      });
+    } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+      });
+    }
+  }
+);
+
 module.exports = router;

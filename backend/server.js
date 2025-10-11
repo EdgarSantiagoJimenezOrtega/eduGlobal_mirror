@@ -6,6 +6,7 @@ require('dotenv').config();
 
 // Import database connection
 const { testConnection, testSimpleQuery } = require('./config/database');
+const { testMySQLConnection } = require('./config/mysql');
 
 // Import route modules
 const coursesRoutes = require('./routes/courses');
@@ -15,6 +16,7 @@ const userProgressRoutes = require('./routes/user_progress');
 const favoritesRoutes = require('./routes/favorites');
 const categoriesRoutes = require('./routes/categories');
 const regionsRoutes = require('./routes/regions');
+const recordedCoursesRoutes = require('./routes/recorded_courses');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -66,6 +68,7 @@ app.use('/api/user_progress', userProgressRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/regions', regionsRoutes);
+app.use('/api/recorded-courses', recordedCoursesRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -80,7 +83,8 @@ app.use('*', (req, res) => {
       'GET /api/user_progress',
       'GET /api/favorites',
       'GET /api/categories',
-      'GET /api/regions'
+      'GET /api/regions',
+      'GET /api/recorded-courses'
     ]
   });
 });
@@ -109,18 +113,27 @@ app.listen(PORT, async () => {
   console.log(`   GET/POST/PUT/DELETE /api/favorites`);
   console.log(`   GET/POST/PUT/DELETE /api/categories`);
   console.log(`   GET/POST/PUT/DELETE /api/regions`);
+  console.log(`   GET/PUT/DELETE      /api/recorded-courses (External MySQL)`);
   console.log('');
-  
+
   // Test database connection on startup
-  console.log('🔌 Testing database connection...');
+  console.log('🔌 Testing Supabase connection...');
   const dbConnected = await testConnection();
-  
+
   if (dbConnected) {
     // If connection test passed, try a simple query
     await testSimpleQuery();
   } else {
-    console.log('⚠️  Database connection failed. Check your .env configuration.');
+    console.log('⚠️  Supabase connection failed. Check your .env configuration.');
     console.log('   Required: SUPABASE_URL, SUPABASE_ANON_KEY');
+  }
+
+  console.log('');
+  console.log('🔌 Testing MySQL connection (External DB)...');
+  const mysqlConnected = await testMySQLConnection();
+
+  if (!mysqlConnected) {
+    console.log('⚠️  MySQL connection failed. Recorded courses feature may not work.');
   }
 });
 

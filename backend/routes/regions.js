@@ -126,15 +126,6 @@ router.post('/',
 
       const regionData = req.body;
 
-      // Validate that preferred_ui_language is in available_languages
-      if (!regionData.available_languages.includes(regionData.preferred_ui_language)) {
-        return res.status(400).json({
-          error: 'Validation Error',
-          message: 'Preferred UI language must be one of the available languages',
-          field: 'preferred_ui_language'
-        });
-      }
-
       // Check if slug already exists
       const { data: existingRegion } = await supabase
         .from('regions')
@@ -234,34 +225,6 @@ router.put('/:id',
 
       console.log('📝 PUT /api/regions/:id - Updating region:', id);
       console.log('📝 Update data:', JSON.stringify(updateData, null, 2));
-
-      // Validate that preferred_ui_language is in available_languages (if both provided)
-      if (updateData.preferred_ui_language && updateData.available_languages) {
-        if (!updateData.available_languages.includes(updateData.preferred_ui_language)) {
-          return res.status(400).json({
-            error: 'Validation Error',
-            message: 'Preferred UI language must be one of the available languages',
-            field: 'preferred_ui_language'
-          });
-        }
-      }
-
-      // If updating only preferred_ui_language, check against existing available_languages
-      if (updateData.preferred_ui_language && !updateData.available_languages) {
-        const { data: existingRegion } = await supabase
-          .from('regions')
-          .select('available_languages')
-          .eq('id', id)
-          .single();
-
-        if (existingRegion && !existingRegion.available_languages.includes(updateData.preferred_ui_language)) {
-          return res.status(400).json({
-            error: 'Validation Error',
-            message: 'Preferred UI language must be one of the available languages',
-            field: 'preferred_ui_language'
-          });
-        }
-      }
 
       // If updating slug, check if it already exists (excluding current region)
       if (updateData.slug) {

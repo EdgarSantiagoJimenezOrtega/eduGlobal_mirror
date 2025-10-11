@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import { apiClient } from '../lib/api'
 
+// Lista completa de idiomas disponibles para la UI
+const ALL_UI_LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'pt', name: 'Português' },
+  { code: 'fr', name: 'Français' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'ja', name: '日本語' },
+  { code: 'zh', name: '中文' },
+  { code: 'ar', name: 'العربية' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'sr', name: 'Српски' }
+]
+
 const RegionModal = ({ isOpen, onClose, region, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -215,23 +230,12 @@ const RegionModal = ({ isOpen, onClose, region, onSuccess }) => {
   }
 
   const handleLanguageToggle = (language) => {
-    setFormData(prev => {
-      const newLanguages = prev.available_languages.includes(language)
+    setFormData(prev => ({
+      ...prev,
+      available_languages: prev.available_languages.includes(language)
         ? prev.available_languages.filter(lang => lang !== language)
         : [...prev.available_languages, language]
-
-      // If preferred language is removed from available languages, clear it
-      let newPreferredLanguage = prev.preferred_ui_language
-      if (!newLanguages.includes(prev.preferred_ui_language)) {
-        newPreferredLanguage = newLanguages.length > 0 ? newLanguages[0] : ''
-      }
-
-      return {
-        ...prev,
-        available_languages: newLanguages,
-        preferred_ui_language: newPreferredLanguage
-      }
-    })
+    }))
   }
 
   const validateForm = () => {
@@ -257,8 +261,6 @@ const RegionModal = ({ isOpen, onClose, region, onSuccess }) => {
 
     if (!formData.preferred_ui_language) {
       errors.preferred_ui_language = 'Preferred UI language is required'
-    } else if (!formData.available_languages.includes(formData.preferred_ui_language)) {
-      errors.preferred_ui_language = 'Preferred UI language must be one of the available languages'
     }
 
     return errors
@@ -532,9 +534,9 @@ const RegionModal = ({ isOpen, onClose, region, onSuccess }) => {
                 required
               >
                 <option value="">Select preferred UI language</option>
-                {formData.available_languages.map(language => (
-                  <option key={language} value={language}>
-                    {language.toUpperCase()}
+                {ALL_UI_LANGUAGES.map(lang => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name} ({lang.code.toUpperCase()})
                   </option>
                 ))}
               </select>

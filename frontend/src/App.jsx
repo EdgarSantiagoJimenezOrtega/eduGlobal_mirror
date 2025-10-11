@@ -7,6 +7,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Categories from './pages/Categories'
 import Regions from './pages/Regions'
+import RecordedCourses from './pages/RecordedCourses'
 
 function App() {
   return (
@@ -38,6 +39,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Regions />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/recorded-courses"
+                element={
+                  <ProtectedRoute>
+                    <RecordedCourses />
                   </ProtectedRoute>
                 }
               />

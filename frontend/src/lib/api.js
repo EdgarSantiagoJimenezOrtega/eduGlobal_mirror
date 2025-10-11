@@ -165,6 +165,20 @@ class ApiClient {
     })
   }
 
+  async getCoursesWithoutImage() {
+    return this.request('/courses/batch/without-image')
+  }
+
+  async bulkUpdateCourseImages(courseIds, defaultImageUrl) {
+    return this.request('/courses/batch/bulk-update-images', {
+      method: 'PUT',
+      body: {
+        course_ids: courseIds,
+        default_image_url: defaultImageUrl
+      }
+    })
+  }
+
   async getCourseModules(courseId, params = {}) {
     const queryParams = new URLSearchParams({
       limit: 1000, // Get all modules for the course
@@ -284,6 +298,36 @@ class ApiClient {
 
   async deleteRegion(id) {
     return this.request(`/regions/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Recorded Courses endpoints (External MySQL)
+  async getRecordedCourses(params = {}) {
+    const searchParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        searchParams.append(key, params[key])
+      }
+    })
+
+    const queryString = searchParams.toString()
+    return this.request(`/recorded-courses${queryString ? `?${queryString}` : ''}`)
+  }
+
+  async getRecordedCourse(id) {
+    return this.request(`/recorded-courses/${id}`)
+  }
+
+  async updateRecordedCourse(id, courseData) {
+    return this.request(`/recorded-courses/${id}`, {
+      method: 'PUT',
+      body: courseData,
+    })
+  }
+
+  async deleteRecordedCourse(id) {
+    return this.request(`/recorded-courses/${id}`, {
       method: 'DELETE',
     })
   }
